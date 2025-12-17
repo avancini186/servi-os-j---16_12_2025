@@ -6,6 +6,7 @@ export interface Provider {
   rating: number;
   reviewsCount: number;
   imageUrl: string;
+  location: string;
 }
 
 export interface Category {

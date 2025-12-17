@@ -8,9 +8,14 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handleSearch = () => {
-    navigate('/results');
+  const [showAllCategories, setShowAllCategories] = useState(false);
+
+  const handleSearch = (category?: string) => {
+    navigate('/results', { state: { category } });
   };
+
+  const mapLimit = 11;
+  const displayedCategories = showAllCategories ? categories : categories.slice(0, mapLimit);
 
   return (
     <div className="relative flex min-h-screen w-full flex-col group/design-root overflow-x-hidden">
@@ -46,19 +51,9 @@ const HomePage: React.FC = () => {
                   </div>
                 </label>
                 {/* TextField */}
-                <label className="flex flex-col h-14 w-full sm:max-w-xs flex-1">
-                  <div className="flex w-full flex-1 items-stretch rounded-lg h-full bg-background-light dark:bg-background-dark">
-                    <input
-                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-gray-900 dark:text-white focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 text-base font-normal leading-normal"
-                      placeholder="Sua cidade ou CEP"
-                    />
-                    <div className="text-gray-500 dark:text-gray-400 flex items-center justify-center pr-4">
-                      <span className="material-symbols-outlined text-2xl">location_on</span>
-                    </div>
-                  </div>
-                </label>
+
                 <button
-                  onClick={handleSearch}
+                  onClick={() => handleSearch()}
                   className="flex w-full sm:w-auto min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 px-6 bg-primary text-white text-base font-bold leading-normal hover:bg-primary/90 transition-colors"
                 >
                   <span className="truncate">Buscar</span>
@@ -73,23 +68,36 @@ const HomePage: React.FC = () => {
             </div>
             {/* Categories Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 mt-8">
-              {categories.map((cat, idx) => (
+              {displayedCategories.map((cat, idx) => (
                 <a
                   key={idx}
                   className="flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer"
-                  onClick={handleSearch}
+                  onClick={() => handleSearch(cat.name)}
                 >
                   <span className="material-symbols-outlined text-4xl text-primary mb-3">{cat.icon}</span>
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{cat.name}</span>
                 </a>
               ))}
-              <a
-                className="flex flex-col items-center justify-center p-6 bg-primary/10 dark:bg-primary/20 rounded-xl border border-primary/20 dark:border-primary/30 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-primary cursor-pointer"
-                onClick={handleSearch}
-              >
-                <span className="material-symbols-outlined text-4xl mb-3">apps</span>
-                <span className="text-sm font-semibold">Ver todas</span>
-              </a>
+
+              {categories.length > mapLimit && (
+                !showAllCategories ? (
+                  <a
+                    className="flex flex-col items-center justify-center p-6 bg-primary/10 dark:bg-primary/20 rounded-xl border border-primary/20 dark:border-primary/30 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-primary cursor-pointer"
+                    onClick={() => setShowAllCategories(true)}
+                  >
+                    <span className="material-symbols-outlined text-4xl mb-3">apps</span>
+                    <span className="text-sm font-semibold">Ver todas</span>
+                  </a>
+                ) : (
+                  <a
+                    className="flex flex-col items-center justify-center p-6 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-gray-500 cursor-pointer"
+                    onClick={() => setShowAllCategories(false)}
+                  >
+                    <span className="material-symbols-outlined text-4xl mb-3">expand_less</span>
+                    <span className="text-sm font-semibold">Ver menos</span>
+                  </a>
+                )
+              )}
             </div>
           </div>
         </main>
