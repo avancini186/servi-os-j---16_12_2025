@@ -27,11 +27,9 @@ const HomePage: React.FC = () => {
             {/* HeadlineText */}
             <div className="text-center mb-8">
               <h1 className="text-gray-900 dark:text-white text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
-                Encontre os melhores profissionais perto de você
+                Que tipo de ajuda precisa hoje?
               </h1>
-              <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Tudo o que você precisa, de reparos domésticos a aulas particulares, ao seu alcance.
-              </p>
+
             </div>
             {/* Search Area */}
             <div className="bg-white dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 w-full max-w-4xl mx-auto">

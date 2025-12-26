@@ -14,6 +14,8 @@ const portfolioImages = [
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'basicinfo' | 'portfolio' | 'reviews'>('basicinfo');
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -36,6 +38,27 @@ const ProfilePage: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [selectedImageIndex]);
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Júlio César - Eletricista',
+          text: 'Confira este perfil no Serviços Já!',
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link copiado para a área de transferência!');
+      } catch (err) {
+        console.error('Failed to copy: ', err);
+      }
+    }
+  };
 
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden font-display bg-background-light dark:bg-background-dark">
@@ -91,158 +114,206 @@ const ProfilePage: React.FC = () => {
                     </svg>
                     <span className="truncate">WhatsApp</span>
                   </button>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleShare}
+                      className="flex min-w-[60px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex-1 sm:flex-none"
+                    >
+                      <span className="material-symbols-outlined text-lg">share</span>
+                    </button>
+                    <button
+                      onClick={() => setIsFavorite(!isFavorite)}
+                      className="flex min-w-[60px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors group flex-1 sm:flex-none"
+                    >
+                      <span
+                        className={`material-symbols-outlined text-lg transition-colors ${isFavorite ? 'text-red-500' : 'text-slate-900 dark:text-white group-hover:text-red-500'}`}
+                        style={isFavorite ? { fontVariationSettings: "'FILL' 1" } : {}}
+                      >
+                        favorite
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
 
-            {/* Portfolio Section */}
-            <section>
-              <h2 className="text-slate-900 dark:text-white text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-4">
-                Portfólio
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {portfolioImages.map((img, index) => (
-                  <div
-                    key={index}
-                    className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
-                    style={{ backgroundImage: `url("${img}")` }}
-                    onClick={() => setSelectedImageIndex(index)}
-                  ></div>
-                ))}
-              </div>
-            </section>
+            {/* Tabs Navigation */}
+            <div className="flex border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto">
+              {[
+                { id: 'basicinfo', label: 'Sobre mim' },
+                { id: 'portfolio', label: 'Portfólio' },
+                { id: 'reviews', label: 'Avaliações' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as 'basicinfo' | 'portfolio' | 'reviews')}
+                  className={`px-6 py-4 text-sm font-bold leading-normal tracking-[0.015em] transition-colors whitespace-nowrap border-b-2 ${activeTab === tab.id
+                    ? 'text-primary border-primary'
+                    : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300'
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 flex flex-col gap-8">
-                {/* About Me Section */}
-                <section>
-                  <h2 className="text-slate-900 dark:text-white text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-4">
-                    Sobre mim
-                  </h2>
-                  <p className="text-slate-600 dark:text-slate-400 text-base font-normal leading-relaxed px-4">
-                    Eletricista profissional com mais de 10 anos de experiência em instalações e manutenções residenciais e
-                    prediais. Comprometido com a segurança e a qualidade, ofereço soluções eficientes para todos os tipos de
-                    projetos elétricos, desde pequenas reparações a instalações completas.
-                  </p>
-                </section>
+            {/* Tab Content */}
+            <div className="min-h-[400px]">
 
-                {/* Reviews Section */}
-                <section>
-                  <h2 className="text-slate-900 dark:text-white text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-4">
-                    Avaliações de Clientes
-                  </h2>
-                  <div className="flex flex-col gap-4 px-4">
-                    <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900">
-                      <div className="flex items-center gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <span
-                            key={star}
-                            className="material-symbols-outlined text-amber-500 text-lg"
-                            style={{ fontVariationSettings: "'FILL' 1" }}
-                          >
-                            star
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
-                        "Serviço impecável! Júlio foi rápido, profissional e resolveu o problema da minha instalação
-                        elétrica com muita eficiência. Recomendo!"
-                      </p>
-                      <p className="text-slate-900 dark:text-slate-300 text-sm font-semibold mt-3">- Mariana Silva</p>
+              {/* Basic Info Tab */}
+              {activeTab === 'basicinfo' && (
+                <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {/* About Me */}
+                  <section>
+                    <p className="text-slate-600 dark:text-slate-400 text-base font-normal leading-relaxed">
+                      Eletricista profissional com mais de 10 anos de experiência em instalações e manutenções residenciais e
+                      prediais. Comprometido com a segurança e a qualidade, ofereço soluções eficientes para todos os tipos de
+                      projetos elétricos, desde pequenas reparações a instalações completas.
+                    </p>
+                  </section>
+
+                  {/* Services (New) */}
+                  <section>
+                    <h2 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-4">
+                      Serviços
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      {['Instalação Elétrica', 'Manutenção Predial', 'Reparos Rápidos', 'Quadros de Energia', 'Iluminação LED', 'Automação'].map((service, i) => (
+                        <span key={i} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full text-sm font-semibold">
+                          {service}
+                        </span>
+                      ))}
                     </div>
-                    <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900">
-                      <div className="flex items-center gap-2">
-                        {[1, 2, 3, 4].map((star) => (
-                          <span
-                            key={star}
-                            className="material-symbols-outlined text-amber-500 text-lg"
-                            style={{ fontVariationSettings: "'FILL' 1" }}
-                          >
-                            star
+                  </section>
+
+                  {/* Social Media */}
+                  <section>
+                    <h3 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-4">
+                      Redes Sociais
+                    </h3>
+                    <div className="flex flex-col gap-3">
+                      <a
+                        href="https://www.instagram.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:text-pink-600 dark:hover:text-pink-500 transition-colors cursor-pointer group"
+                      >
+                        <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.012 3.584-.07 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.012-3.584.07-4.85c.148-3.225 1.664-4.771 4.919-4.919 1.266-.057 1.644-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.947s-.014-3.667-.072-4.947c-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44c0-.795-.645-1.44-1.441-1.44z"></path>
+                        </svg>
+                        <span>@juliocesar.eletricista</span>
+                      </a>
+                      <a
+                        href="https://www.facebook.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 transition-colors cursor-pointer group"
+                      >
+                        <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path>
+                        </svg>
+                        <span>Júlio César Eletricista</span>
+                      </a>
+                    </div>
+                  </section>
+
+                  {/* Location Section */}
+                  <section>
+                    <h3 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-4">
+                      Localização
+                    </h3>
+                    <div className="">
+                      <a
+                        href="https://www.google.com/maps/search/?api=1&query=São+Paulo+SP"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full h-48 bg-center bg-no-repeat bg-cover rounded-lg overflow-hidden cursor-pointer hover:opacity-90 hover:shadow-lg transition-all group relative"
+                        style={{
+                          backgroundImage:
+                            'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAZrv8QigSFXh9RLZqZaVWXBLRgdOIedTEQWoBc9MQEM7jQ85d9JENC8zDrrsrpSEuxdCp-H_s9hD_ZRwV0jSyQ86NdyxH86Jd5e-ZC1gA4_oG1r34HADD7RyAK61A7Zkkuy3zTdZMRH4viygiW1wYBJaZKKV_1q-BIR_UmzkI4PhrcHC2pYSobJD6kVdIjbDuIEVaROkvmDGoPmB98VI0E74ITlkq8MAhn0fTg9ufdQUviVVI2UANo34aoBC04nUkTQNfMgIU6-K4")',
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                          <span className="material-symbols-outlined text-transparent group-hover:text-white text-4xl drop-shadow-lg transition-all transform scale-0 group-hover:scale-100">
+                            open_in_new
                           </span>
-                        ))}
+                        </div>
+                      </a>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mt-3">
+                        Atendimento em São Paulo, SP e região metropolitana.
+                      </p>
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {/* Portfolio Tab */}
+              {activeTab === 'portfolio' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {portfolioImages.map((img, index) => (
+                      <div
+                        key={index}
+                        className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                        style={{ backgroundImage: `url("${img}")` }}
+                        onClick={() => setSelectedImageIndex(index)}
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Reviews Tab */}
+              {activeTab === 'reviews' && (
+                <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900">
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
                         <span
-                          className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-lg"
+                          key={star}
+                          className="material-symbols-outlined text-amber-500 text-lg"
                           style={{ fontVariationSettings: "'FILL' 1" }}
                         >
                           star
                         </span>
-                      </div>
-                      <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
-                        "Bom profissional, pontual e honesto. O serviço ficou ótimo."
-                      </p>
-                      <p className="text-slate-900 dark:text-slate-300 text-sm font-semibold mt-3">- Roberto Costa</p>
+                      ))}
                     </div>
-                  </div>
-                </section>
-              </div>
-
-              <div className="lg:col-span-1 flex flex-col gap-8">
-                {/* Social Media */}
-                <section>
-                  <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-3">
-                    Redes Sociais
-                  </h3>
-                  <div className="flex flex-col gap-2 px-4">
-                    <a
-                      href="https://www.instagram.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:text-pink-600 dark:hover:text-pink-500 transition-colors cursor-pointer group"
-                    >
-                      <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.012 3.584-.07 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.012-3.584.07-4.85c.148-3.225 1.664-4.771 4.919-4.919 1.266-.057 1.644-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.947s-.014-3.667-.072-4.947c-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44c0-.795-.645-1.44-1.441-1.44z"></path>
-                      </svg>
-                      <span>@juliocesar.eletricista</span>
-                    </a>
-                    <a
-                      href="https://www.facebook.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 transition-colors cursor-pointer group"
-                    >
-                      <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path>
-                      </svg>
-                      <span>Júlio César Eletricista</span>
-                    </a>
-                  </div>
-                </section>
-
-                {/* Location Section */}
-                <section>
-                  <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-3">
-                    Localização
-                  </h3>
-                  <div className="px-4">
-                    <a
-                      href="https://www.google.com/maps/search/?api=1&query=São+Paulo+SP"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block w-full h-48 bg-center bg-no-repeat bg-cover rounded-lg overflow-hidden cursor-pointer hover:opacity-90 hover:shadow-lg transition-all group relative"
-                    >
-                      <img
-                        alt="Map showing service area in São Paulo"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZrv8QigSFXh9RLZqZaVWXBLRgdOIedTEQWoBc9MQEM7jQ85d9JENC8zDrrsrpSEuxdCp-H_s9hD_ZRwV0jSyQ86NdyxH86Jd5e-ZC1gA4_oG1r34HADD7RyAK61A7Zkkuy3zTdZMRH4viygiW1wYBJaZKKV_1q-BIR_UmzkI4PhrcHC2pYSobJD6kVdIjbDuIEVaROkvmDGoPmB98VI0E74ITlkq8MAhn0fTg9ufdQUviVVI2UANo34aoBC04nUkTQNfMgIU6-K4"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <span className="material-symbols-outlined text-transparent group-hover:text-white text-4xl drop-shadow-lg transition-all transform scale-0 group-hover:scale-100">
-                          open_in_new
-                        </span>
-                      </div>
-                    </a>
                     <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
-                      Atendimento em São Paulo, SP e região metropolitana.
+                      "Serviço impecável! Júlio foi rápido, profissional e resolveu o problema da minha instalação
+                      elétrica com muita eficiência. Recomendo!"
                     </p>
+                    <p className="text-slate-900 dark:text-slate-300 text-sm font-semibold mt-3">- Mariana Silva</p>
                   </div>
-                </section>
-              </div>
+                  <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900">
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4].map((star) => (
+                        <span
+                          key={star}
+                          className="material-symbols-outlined text-amber-500 text-lg"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          star
+                        </span>
+                      ))}
+                      <span
+                        className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-lg"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        star
+                      </span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
+                      "Bom profissional, pontual e honesto. O serviço ficou ótimo."
+                    </p>
+                    <p className="text-slate-900 dark:text-slate-300 text-sm font-semibold mt-3">- Roberto Costa</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </main>
       </div>
-
 
       {/* Lightbox Modal */}
       {selectedImageIndex !== null && (
