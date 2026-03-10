@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
 const AuthPage: React.FC = () => {
     const { type } = useParams<{ type: string }>(); // 'client' or 'provider'
     const navigate = useNavigate();
-    const [mode, setMode] = useState<'login' | 'signup'>('login');
+    const location = useLocation();
+    const initialMode = location.state?.mode || 'login';
+    const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        if (location.state?.mode) {
+            setMode(location.state.mode);
+        }
+    }, [location.state]);
 
     const isProvider = type === 'provider';
 
@@ -67,7 +75,7 @@ const AuthPage: React.FC = () => {
                 <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center relative">
                     {/* Back Button */}
                     <button
-                        onClick={() => navigate('/auth/selection')}
+                        onClick={() => navigate('/')}
                         className="absolute top-6 left-6 text-gray-400 hover:text-gray-600 flex items-center gap-1 text-sm font-medium"
                     >
                         <span className="material-symbols-outlined text-sm">arrow_back</span>

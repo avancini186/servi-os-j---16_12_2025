@@ -43,13 +43,13 @@ const Header: React.FC = () => {
           {/* Desktop Only Buttons */}
           <div className="hidden md:flex items-center gap-4">
             <button
-              onClick={() => navigate('/auth/selection')}
+              onClick={() => navigate('/auth/client', { state: { mode: 'login' } })}
               className="rounded-lg px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
             >
               Login
             </button>
             <button
-              onClick={() => navigate('/auth/selection')}
+              onClick={() => navigate('/auth/client', { state: { mode: 'signup' } })}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-colors shadow-sm"
             >
               Cadastrar
@@ -97,13 +97,13 @@ const Header: React.FC = () => {
             <div className="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
             <div className="flex flex-col gap-3 px-2">
               <button
-                onClick={() => { navigate('/auth/selection'); closeMenu(); }}
+                onClick={() => { navigate('/auth/client', { state: { mode: 'login' } }); closeMenu(); }}
                 className="w-full rounded-lg h-10 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 Login
               </button>
               <button
-                onClick={() => { navigate('/auth/selection'); closeMenu(); }}
+                onClick={() => { navigate('/auth/client', { state: { mode: 'signup' } }); closeMenu(); }}
                 className="w-full rounded-lg h-10 bg-primary text-white font-bold text-sm hover:bg-primary/90"
               >
                 Cadastrar
