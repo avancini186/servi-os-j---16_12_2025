@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 const AuthPage: React.FC = () => {
     const { type } = useParams<{ type: string }>(); // 'client' or 'provider'
@@ -9,6 +10,13 @@ const AuthPage: React.FC = () => {
     const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
     const [showPassword, setShowPassword] = useState(false);
 
+    // Form states
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     useEffect(() => {
         if (location.state?.mode) {
             setMode(location.state.mode);
@@ -16,6 +24,54 @@ const AuthPage: React.FC = () => {
     }, [location.state]);
 
     const isProvider = type === 'provider';
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setLoading(true);
+
+        try {
+            if (mode === 'signup') {
+                const { error: signUpError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            name,
+                            role: type || 'client',
+                        }
+                    }
+                });
+
+                if (signUpError) throw signUpError;
+                
+                // Assuming redirect to logic based on type
+                if (type === 'provider') {
+                    navigate('/profile');
+                } else {
+                    navigate('/');
+                }
+            } else {
+                const { error: signInError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+
+                if (signInError) throw signInError;
+
+                if (type === 'provider') {
+                    navigate('/profile');
+                } else {
+                    navigate('/'); // Or dashboard
+                }
+            }
+        } catch (err: any) {
+            setError(err.message || 'Ocorreu um erro durante a autenticação.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     // Theme Config based on type
     const theme = isProvider ? {
@@ -90,9 +146,9 @@ const AuthPage: React.FC = () => {
                     </p>
 
                     {/* Tabs */}
-                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-8">
+                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-6">
                         <button
-                            onClick={() => setMode('login')}
+                            onClick={() => { setMode('login'); setError(null); }}
                             className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${mode === 'login'
                                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
@@ -101,7 +157,7 @@ const AuthPage: React.FC = () => {
                             Login
                         </button>
                         <button
-                            onClick={() => setMode('signup')}
+                            onClick={() => { setMode('signup'); setError(null); }}
                             className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${mode === 'signup'
                                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
@@ -111,7 +167,13 @@ const AuthPage: React.FC = () => {
                         </button>
                     </div>
 
-                    <form className="flex flex-col gap-4">
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg border border-red-100 dark:border-red-800/30 text-center">
+                            {error}
+                        </div>
+                    )}
+
+                    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                         {mode === 'signup' && (
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
@@ -119,7 +181,10 @@ const AuthPage: React.FC = () => {
                                 </label>
                                 <input
                                     type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
                                     placeholder="Seu nome"
+                                    required={mode === 'signup'}
                                     className={`w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-900 border border-gray-200 dark:border-gray-700 ${theme.border} outline-none transition-all`}
                                 />
                             </div>
@@ -131,7 +196,10 @@ const AuthPage: React.FC = () => {
                             </label>
                             <input
                                 type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 placeholder="seu@email.com"
+                                required
                                 className={`w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-900 border border-gray-200 dark:border-gray-700 ${theme.border} outline-none transition-all`}
                             />
                         </div>
@@ -150,7 +218,10 @@ const AuthPage: React.FC = () => {
                             <div className="relative">
                                 <input
                                     type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
+                                    required
                                     className={`w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-900 border border-gray-200 dark:border-gray-700 ${theme.border} outline-none transition-all pr-12`}
                                 />
                                 <button
@@ -166,10 +237,11 @@ const AuthPage: React.FC = () => {
                         </div>
 
                         <button
-                            type="button"
-                            className={`mt-4 w-full py-3.5 rounded-xl text-white font-bold text-base shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-[0.98] ${theme.primary}`}
+                            type="submit"
+                            disabled={loading}
+                            className={`mt-4 w-full py-3.5 rounded-xl text-white font-bold text-base shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-[0.98] ${theme.primary} ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            {mode === 'login' ? (isProvider ? 'Acessar Painel' : 'Entrar') : 'Criar Conta'} <span className="ml-1">→</span>
+                            {loading ? 'Aguarde...' : (mode === 'login' ? (isProvider ? 'Acessar Painel' : 'Entrar') : 'Criar Conta')} <span className="ml-1">→</span>
                         </button>
                     </form>
 
