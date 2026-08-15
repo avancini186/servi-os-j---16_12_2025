@@ -6,7 +6,10 @@ import ProfilePage from './pages/ProfilePage';
 import AuthPage from './pages/AuthPage';
 import OnboardingPage from './pages/OnboardingPage';
 import SubscriptionPage from './pages/SubscriptionPage';
+import AdminProvidersPage from './pages/AdminProvidersPage';
+import AdminReviewPage from './pages/AdminReviewPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
 import { getProviderDraft } from './lib/onboarding';
 
 const ProfilePreviewRedirect: React.FC = () => {
@@ -85,6 +88,30 @@ const App: React.FC = () => {
             <ProtectedRoute allowedRole="provider">
               <SubscriptionPage />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <AdminProvidersPage />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/providers"
+          element={
+            <AdminProtectedRoute>
+              <AdminProvidersPage />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/providers/:id"
+          element={
+            <AdminProtectedRoute>
+              <AdminReviewPage />
+            </AdminProtectedRoute>
           }
         />
       </Routes>

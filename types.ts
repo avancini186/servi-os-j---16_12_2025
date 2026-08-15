@@ -118,6 +118,27 @@ export interface PublicationRequestResult {
   errorMessage?: string;
 }
 
+export type AdminProviderFilter = 'all' | 'pending_review' | 'published' | 'rejected' | 'suspended' | 'draft';
+
+export interface AdminProviderListItem {
+  id: number;
+  profileId: number;
+  userName: string;
+  userEmail: string;
+  avatarUrl: string;
+  professionalTitle: string;
+  locationCity: string;
+  locationState: string;
+  status: ProviderLifecycleStatus;
+  rejectionReason?: string;
+  updatedAt: string;
+  createdAt: string;
+  servicesCount: number;
+  portfolioCount: number;
+  isComplete: boolean;
+}
+
+
 
 
 

@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 export interface UserProfile {
   id: number;
   userId: string;
-  role: 'client' | 'provider';
+  role: 'client' | 'provider' | 'admin';
   name: string;
   email: string;
   avatarUrl?: string;
@@ -38,10 +38,12 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
       return null;
     }
 
+    const roleVal = profileData.role === 'admin' ? 'admin' : profileData.role === 'provider' ? 'provider' : 'client';
+
     return {
       id: profileData.id,
       userId: profileData.user_id,
-      role: (profileData.role === 'provider' ? 'provider' : 'client') as 'client' | 'provider',
+      role: roleVal,
       name: profileData.name || userData.user.email?.split('@')[0] || 'Usuário',
       email: profileData.email || userData.user.email || '',
       avatarUrl: profileData.avatar_url || '',

@@ -81,6 +81,12 @@ const Header: React.FC = () => {
               </a>
             </>
           )}
+          {profile?.role === 'admin' && (
+            <a onClick={() => navigate('/admin')} className="text-sm font-bold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 cursor-pointer transition-colors flex items-center gap-1">
+              <span className="material-symbols-outlined text-base">admin_panel_settings</span>
+              <span>Painel Admin</span>
+            </a>
+          )}
         </nav>
 
         {/* Desktop Auth/User & Mobile Toggle */}
@@ -99,7 +105,7 @@ const Header: React.FC = () => {
                     {profile.name}
                   </span>
                   <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">
-                    {profile.role === 'provider' ? 'Prestador' : 'Cliente'}
+                    {profile.role === 'admin' ? 'Administrador' : profile.role === 'provider' ? 'Prestador' : 'Cliente'}
                   </span>
                 </div>
                 <button
