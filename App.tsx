@@ -7,6 +7,7 @@ import AuthPage from './pages/AuthPage';
 import OnboardingPage from './pages/OnboardingPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import ProviderDashboardPage from './pages/ProviderDashboardPage';
 import AdminProvidersPage from './pages/AdminProvidersPage';
 import AdminReviewPage from './pages/AdminReviewPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -51,6 +52,14 @@ const App: React.FC = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/:id" element={<ProfilePage />} />
         <Route path="/auth/:type" element={<AuthPage />} />
+        <Route
+          path="/provider"
+          element={
+            <ProtectedRoute allowedRole="provider">
+              <ProviderDashboardPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/onboarding"
           element={

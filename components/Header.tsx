@@ -73,6 +73,10 @@ const Header: React.FC = () => {
           </a>
           {profile?.role === 'provider' && (
             <>
+              <a onClick={() => navigate('/provider')} className="text-sm font-bold text-primary hover:text-primary/90 cursor-pointer transition-colors flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">dashboard</span>
+                <span>Central</span>
+              </a>
               <a onClick={() => navigate('/onboarding')} className="text-sm font-medium text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary cursor-pointer transition-colors">
                 Meu Perfil
               </a>
