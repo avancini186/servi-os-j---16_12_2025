@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import { getCategories, getAvailableCities, searchProviders } from '../lib/catalog';
+import { trackAnalyticsEvent } from '../lib/analytics';
 import type { Provider, Category } from '../types';
 
 const ResultsPage: React.FC = () => {
@@ -60,6 +61,20 @@ const ResultsPage: React.FC = () => {
       setProviders(result.providers);
       setTotalCount(result.total);
       setTotalPages(result.totalPages);
+
+      // Track Search Term if present
+      if (queryParam && queryParam.trim()) {
+        trackAnalyticsEvent({ eventType: 'search', searchTerm: queryParam.trim() });
+      }
+
+      // Track Impression for each provider rendered on results
+      result.providers.forEach((p) => {
+        trackAnalyticsEvent({
+          providerId: p.id,
+          eventType: 'provider_impression',
+          searchTerm: queryParam || undefined,
+        });
+      });
     } catch (err: any) {
       console.error('Error fetching providers:', err);
       setError('Não foi possível carregar os prestadores de serviço.');

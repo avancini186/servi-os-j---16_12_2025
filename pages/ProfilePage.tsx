@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import ProfileCompletenessChecklist from '../components/ProfileCompletenessChecklist';
 import { getProviderProfile, DetailedProviderProfile } from '../lib/catalog';
 import { getProviderProfilePreview } from '../lib/provider';
+import { trackAnalyticsEvent } from '../lib/analytics';
 import { ProfileCompleteness } from '../types';
 
 interface ProfilePageProps {
@@ -64,6 +65,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ previewMode = false }) => {
           setNotFound(true);
         } else {
           setProfile(data);
+          // Track public profile_view
+          trackAnalyticsEvent({
+            providerId: data.id,
+            eventType: 'profile_view',
+          });
         }
       }
     } catch (err: any) {
@@ -321,7 +327,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ previewMode = false }) => {
                     <div className="flex w-full flex-col sm:flex-row max-w-[480px] gap-3 @[480px]:w-auto">
                       {profile.phone && (
                         <button
-                          onClick={() => window.location.href = getCallUrl(profile.phone)}
+                          onClick={() => {
+                            if (!previewMode) {
+                              trackAnalyticsEvent({ providerId: profile.id, eventType: 'contact_click', channel: 'phone' });
+                            }
+                            window.location.href = getCallUrl(profile.phone);
+                          }}
                           className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] flex-1 @[480px]:flex-auto gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                         >
                           <span className="material-symbols-outlined text-lg">call</span>
@@ -331,7 +342,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ previewMode = false }) => {
 
                       {profile.whatsapp && (
                         <button
-                          onClick={() => window.open(getWhatsAppUrl(profile.whatsapp), '_blank')}
+                          onClick={() => {
+                            if (!previewMode) {
+                              trackAnalyticsEvent({ providerId: profile.id, eventType: 'contact_click', channel: 'whatsapp' });
+                            }
+                            window.open(getWhatsAppUrl(profile.whatsapp), '_blank');
+                          }}
                           className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] flex-1 @[480px]:flex-auto gap-2 hover:bg-primary/90 transition-colors shadow-sm"
                         >
                           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

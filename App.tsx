@@ -6,6 +6,7 @@ import ProfilePage from './pages/ProfilePage';
 import AuthPage from './pages/AuthPage';
 import OnboardingPage from './pages/OnboardingPage';
 import SubscriptionPage from './pages/SubscriptionPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 import AdminProvidersPage from './pages/AdminProvidersPage';
 import AdminReviewPage from './pages/AdminReviewPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -79,6 +80,14 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute allowedRole="provider">
               <SubscriptionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute allowedRole="provider">
+              <AnalyticsPage />
             </ProtectedRoute>
           }
         />

@@ -138,6 +138,59 @@ export interface AdminProviderListItem {
   isComplete: boolean;
 }
 
+export type AnalyticsEventType = 'search' | 'provider_impression' | 'profile_view' | 'contact_click' | 'social_click' | 'portfolio_view';
+
+export type AnalyticsPeriod = 'today' | '7d' | '30d' | '90d' | 'all';
+
+export interface AnalyticsTimelinePoint {
+  date: string;
+  views: number;
+  impressions: number;
+  contacts: number;
+}
+
+export interface TopSearchTerm {
+  term: string;
+  count: number;
+}
+
+export interface TopPortfolioItemMetrics {
+  id: number;
+  title: string;
+  imageUrl: string;
+  views: number;
+}
+
+export interface AnalyticsSummary {
+  period: AnalyticsPeriod;
+  totalViews: number;
+  totalImpressions: number;
+  totalContacts: number;
+  impressionToViewRate: number; // % (visualizações / aparições)
+  viewToContactRate: number; // % (contatos / visualizações)
+  previousPeriodComparison?: {
+    viewsChangePercent: number;
+    impressionsChangePercent: number;
+    contactsChangePercent: number;
+  };
+  contactBreakdown: {
+    whatsapp: number;
+    phone: number;
+    email: number;
+    website: number;
+  };
+  socialBreakdown: {
+    instagram: number;
+    facebook: number;
+    linkedin: number;
+    other: number;
+  };
+  topSearchTerms: TopSearchTerm[];
+  topPortfolioItems: TopPortfolioItemMetrics[];
+  timeline: AnalyticsTimelinePoint[];
+}
+
+
 
 
 
