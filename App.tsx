@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ResultsPage from './pages/ResultsPage';
 import ProfilePage from './pages/ProfilePage';
 import AuthPage from './pages/AuthPage';
 import OnboardingPage from './pages/OnboardingPage';
+import SubscriptionPage from './pages/SubscriptionPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { getProviderDraft } from './lib/onboarding';
 
@@ -67,6 +68,22 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute allowedRole="provider">
               <ProfilePage previewMode={true} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assinatura"
+          element={
+            <ProtectedRoute allowedRole="provider">
+              <SubscriptionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plans"
+          element={
+            <ProtectedRoute allowedRole="provider">
+              <SubscriptionPage />
             </ProtectedRoute>
           }
         />

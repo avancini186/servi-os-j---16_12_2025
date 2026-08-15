@@ -58,4 +58,46 @@ export interface ProfileCompleteness {
   items: ProfileCompletenessItem[];
 }
 
+export type BillingInterval = 'month' | 'year';
+
+export interface SubscriptionPlan {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  price: number; // Preço do ciclo
+  monthlyEquivalent: number; // Valor equivalente por mês
+  billingInterval: BillingInterval;
+  billingIntervalCount: number; // 1, 3, 12
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export type SubscriptionStatus = 'pending' | 'active' | 'past_due' | 'cancelled' | 'expired';
+
+export interface ProviderSubscription {
+  id: number;
+  providerId: number;
+  planId: number;
+  plan?: SubscriptionPlan;
+  status: SubscriptionStatus;
+  startedAt?: string;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  cancelledAt?: string;
+  gateway?: string;
+  gatewayCustomerId?: string;
+  gatewaySubscriptionId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActivationEligibility {
+  isEligible: boolean;
+  isProfileComplete: boolean;
+  hasActiveSubscription: boolean;
+  reasons: string[];
+}
+
+
 

@@ -71,6 +71,16 @@ const Header: React.FC = () => {
           <a onClick={() => navigate('/results')} className="text-sm font-medium text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary cursor-pointer transition-colors">
             Buscar Serviços
           </a>
+          {profile?.role === 'provider' && (
+            <>
+              <a onClick={() => navigate('/onboarding')} className="text-sm font-medium text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary cursor-pointer transition-colors">
+                Meu Perfil
+              </a>
+              <a onClick={() => navigate('/assinatura')} className="text-sm font-medium text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary cursor-pointer transition-colors">
+                Assinatura
+              </a>
+            </>
+          )}
         </nav>
 
         {/* Desktop Auth/User & Mobile Toggle */}
