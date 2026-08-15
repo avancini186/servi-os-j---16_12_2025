@@ -1,9 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import type { User } from '@supabase/supabase-js';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const toggleMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -11,6 +28,21 @@ const Header: React.FC = () => {
 
   const closeMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+    closeMenu();
+  };
+
+  // Helper to get initials or avatar URL
+  const getAvatarUrl = () => {
+    if (user?.user_metadata?.avatar_url) {
+      return user.user_metadata.avatar_url;
+    }
+    const name = user?.user_metadata?.name || user?.email || 'User';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
   };
 
   return (
@@ -40,20 +72,32 @@ const Header: React.FC = () => {
 
         {/* Desktop Auth/User & Mobile Toggle */}
         <div className="flex items-center gap-4">
-          {/* Desktop Only Buttons */}
+          {/* Desktop Only Buttons / Avatar */}
           <div className="hidden md:flex items-center gap-4">
-            <button
-              onClick={() => navigate('/auth/client', { state: { mode: 'login' } })}
-              className="rounded-lg px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
-            >
-              Login
-            </button>
-            <button
-              onClick={() => navigate('/auth/client', { state: { mode: 'signup' } })}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-colors shadow-sm"
-            >
-              Cadastrar
-            </button>
+            {user ? (
+              <div 
+                className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => navigate('/profile')}
+                title="Meu Perfil"
+              >
+                <img src={getAvatarUrl()} alt="User Avatar" className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate('/auth/client', { state: { mode: 'login' } })}
+                  className="rounded-lg px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => navigate('/auth/client', { state: { mode: 'signup' } })}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-colors shadow-sm"
+                >
+                  Cadastrar
+                </button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -96,18 +140,50 @@ const Header: React.FC = () => {
             </a>
             <div className="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
             <div className="flex flex-col gap-3 px-2">
-              <button
-                onClick={() => { navigate('/auth/client', { state: { mode: 'login' } }); closeMenu(); }}
-                className="w-full rounded-lg h-10 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                Login
-              </button>
-              <button
-                onClick={() => { navigate('/auth/client', { state: { mode: 'signup' } }); closeMenu(); }}
-                className="w-full rounded-lg h-10 bg-primary text-white font-bold text-sm hover:bg-primary/90"
-              >
-                Cadastrar
-              </button>
+              {user ? (
+                <>
+                  <div className="flex items-center gap-3 px-2 py-2 mb-2">
+                    <img src={getAvatarUrl()} alt="User Avatar" className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700" />
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                        {user.user_metadata?.name || 'Usuário'}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {user.email}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { navigate('/profile'); closeMenu(); }}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg h-10 bg-primary/10 text-primary font-bold text-sm hover:bg-primary/20 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">person</span>
+                    Meu Perfil
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg h-10 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">logout</span>
+                    Sair
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { navigate('/auth/client', { state: { mode: 'login' } }); closeMenu(); }}
+                    className="w-full rounded-lg h-10 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => { navigate('/auth/client', { state: { mode: 'signup' } }); closeMenu(); }}
+                    className="w-full rounded-lg h-10 bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors"
+                  >
+                    Cadastrar
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
