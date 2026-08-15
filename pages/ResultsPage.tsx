@@ -1,31 +1,107 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
-import { providers, categories } from '../data/mockData';
+import { getCategories, getAvailableCities, searchProviders } from '../lib/catalog';
+import type { Provider, Category } from '../types';
 
 const ResultsPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Extract URL Params
+  const queryParam = searchParams.get('q') || '';
+  const categoryParam = searchParams.get('category') || '';
+  const cityParam = searchParams.get('city') || '';
+  const minRatingParam = Number(searchParams.get('minRating')) || 0;
+  const pageParam = Number(searchParams.get('page')) || 1;
+
+  // Local Component State
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(location.state?.category || null);
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-  const [minRating, setMinRating] = useState<number | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  // Derive unique locations from providers
-  const uniqueLocations = Array.from(new Set(providers.map(p => p.location))).sort();
+  // Load Categories and Available Cities on Mount
+  useEffect(() => {
+    async function loadMetadata() {
+      try {
+        const [catsData, citiesData] = await Promise.all([
+          getCategories(),
+          getAvailableCities(),
+        ]);
+        setCategories(catsData);
+        setAvailableCities(citiesData);
+      } catch (err) {
+        console.error('Error loading metadata filters:', err);
+      }
+    }
+    loadMetadata();
+  }, []);
 
-  // Filter Logic
-  const filteredProviders = providers.filter((provider) => {
-    if (selectedCategory && provider.category !== selectedCategory) return false;
-    if (selectedLocation && provider.location !== selectedLocation) return false;
-    if (minRating && provider.rating < minRating) return false;
-    return true;
-  });
+  // Fetch Providers whenever URL Search Params Change
+  const fetchProviders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await searchProviders({
+        query: queryParam,
+        category: categoryParam,
+        city: cityParam,
+        minRating: minRatingParam,
+        page: pageParam,
+        limit: 10,
+      });
+
+      setProviders(result.providers);
+      setTotalCount(result.total);
+      setTotalPages(result.totalPages);
+    } catch (err: any) {
+      console.error('Error fetching providers:', err);
+      setError('Não foi possível carregar os prestadores de serviço.');
+    } finally {
+      setLoading(false);
+    }
+  }, [queryParam, categoryParam, cityParam, minRatingParam, pageParam]);
+
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
+
+  // Update URL Query Params Helper
+  const updateFilters = (newParams: Record<string, string | number | null>) => {
+    const updated = new URLSearchParams(searchParams);
+
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === null || value === '' || value === 0) {
+        updated.delete(key);
+      } else {
+        updated.set(key, String(value));
+      }
+    });
+
+    // Reset to page 1 whenever filters change (unless page is explicitly updated)
+    if (!('page' in newParams)) {
+      updated.delete('page');
+    }
+
+    setSearchParams(updated);
+  };
 
   const clearFilters = () => {
-    setSelectedCategory(null);
-    setSelectedLocation(null);
-    setMinRating(null);
+    setSearchParams(new URLSearchParams());
+  };
+
+  // Avatar Fallback Helper
+  const getProviderAvatar = (provider: Provider) => {
+    if (provider.imageUrl && provider.imageUrl.trim()) {
+      return provider.imageUrl;
+    }
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(provider.name)}&background=137fec&color=fff`;
   };
 
   return (
@@ -62,8 +138,8 @@ const ResultsPage: React.FC = () => {
                   </div>
                   <div className="px-3">
                     <select
-                      value={selectedCategory || ''}
-                      onChange={(e) => setSelectedCategory(e.target.value || null)}
+                      value={categoryParam}
+                      onChange={(e) => updateFilters({ category: e.target.value || null })}
                       className="w-full p-2.5 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary dark:focus:border-primary outline-none cursor-pointer"
                     >
                       <option value="">Todas as Categorias</option>
@@ -88,12 +164,12 @@ const ResultsPage: React.FC = () => {
                   </div>
                   <div className="px-3">
                     <select
-                      value={selectedLocation || ''}
-                      onChange={(e) => setSelectedLocation(e.target.value || null)}
+                      value={cityParam}
+                      onChange={(e) => updateFilters({ city: e.target.value || null })}
                       className="w-full p-2.5 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary dark:focus:border-primary outline-none cursor-pointer"
                     >
                       <option value="">Todas as Cidades</option>
-                      {uniqueLocations.map((loc) => (
+                      {availableCities.map((loc) => (
                         <option key={loc} value={loc}>
                           {loc}
                         </option>
@@ -108,16 +184,16 @@ const ResultsPage: React.FC = () => {
                     <span className="material-symbols-outlined text-text-light-secondary dark:text-text-dark-secondary">
                       star
                     </span>
-                    <p className="text-text-light-primary dark:text-text-dark-primary text-sm font-medium">Avaliação</p>
+                    <p className="text-text-light-primary dark:text-text-dark-primary text-sm font-medium">Avaliação Mínima</p>
                   </div>
                   <div className="pl-4 flex flex-wrap gap-2">
                     {[4, 4.5, 4.8].map((rating) => (
                       <button
                         key={rating}
-                        onClick={() => setMinRating(minRating === rating ? null : rating)}
-                        className={`px-3 py-1 text-xs font-bold rounded-full border transition-colors ${minRating === rating
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-transparent text-text-light-secondary border-gray-300 hover:border-primary hover:text-primary'
+                        onClick={() => updateFilters({ minRating: minRatingParam === rating ? null : rating })}
+                        className={`px-3 py-1 text-xs font-bold rounded-full border transition-colors ${minRatingParam === rating
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-transparent text-text-light-secondary border-gray-300 hover:border-primary hover:text-primary'
                           }`}
                       >
                         {rating}+
@@ -126,9 +202,8 @@ const ResultsPage: React.FC = () => {
                   </div>
                 </div>
 
-
-
               </div>
+
               <button
                 onClick={clearFilters}
                 className="mt-8 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary/10 dark:bg-primary/20 text-primary text-sm font-bold tracking-wide hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors"
@@ -138,120 +213,174 @@ const ResultsPage: React.FC = () => {
             </div>
           </aside>
 
+          {/* Results Main Content */}
           <div className="col-span-1 md:col-span-3">
             {/* PageHeading */}
             <div className="flex flex-wrap justify-between gap-4 mb-6">
               <div className="flex flex-col gap-1">
                 <h1 className="text-text-light-primary dark:text-text-dark-primary text-3xl font-black tracking-tighter">
-                  {selectedCategory ? `Resultados para "${selectedCategory}"` : 'Resultados encontrados'}
+                  {queryParam
+                    ? `Resultados para "${queryParam}"`
+                    : categoryParam
+                      ? `Resultados em "${categoryParam}"`
+                      : 'Prestadores de Serviço'}
                 </h1>
                 <p className="text-text-light-secondary dark:text-text-dark-secondary text-base font-normal">
-                  {filteredProviders.length} prestadores encontrados
+                  {loading ? 'Buscando prestadores...' : `${totalCount} prestador(es) encontrado(s)`}
                 </p>
               </div>
             </div>
 
+            {/* Loading Skeleton State */}
+            {loading && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={idx} className="h-44 bg-white dark:bg-card-dark rounded-xl p-4 shadow-sm"></div>
+                ))}
+              </div>
+            )}
+
+            {/* Error State */}
+            {!loading && error && (
+              <div className="flex flex-col items-center justify-center py-12 px-6 bg-red-50 dark:bg-red-950/30 rounded-xl border border-red-200 dark:border-red-900/50 text-center">
+                <span className="material-symbols-outlined text-5xl text-red-500 mb-3">error</span>
+                <p className="text-gray-900 dark:text-white text-lg font-bold mb-1">{error}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Ocorreu uma falha ao conectar com o banco de dados.</p>
+                <button
+                  onClick={fetchProviders}
+                  className="px-6 py-2.5 bg-primary text-white font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            )}
+
             {/* Cards Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredProviders.length > 0 ? (
-                filteredProviders.map((provider) => (
-                  <div
-                    key={provider.id}
-                    className="flex items-stretch justify-between gap-4 rounded-xl bg-white dark:bg-card-dark p-4 shadow-sm transition-shadow hover:shadow-lg"
-                  >
+            {!loading && !error && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {providers.length > 0 ? (
+                  providers.map((provider) => (
                     <div
-                      className="w-24 h-24 bg-center bg-no-repeat bg-cover rounded-lg flex-shrink-0"
-                      data-alt={`Foto de perfil de ${provider.name}`}
-                      style={{ backgroundImage: `url("${provider.imageUrl}")` }}
-                    ></div>
-                    <div className="flex flex-col gap-2 flex-1 justify-between">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="material-symbols-outlined !text-xl text-yellow-500"
-                            style={{ fontVariationSettings: "'FILL' 1" }}
-                          >
-                            star
-                          </span>
-                          <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm font-medium">
-                            {provider.rating} <span className="font-normal">({provider.reviewsCount} avaliações)</span>
+                      key={provider.id}
+                      className="flex items-stretch justify-between gap-4 rounded-xl bg-white dark:bg-card-dark p-4 shadow-sm transition-shadow hover:shadow-lg"
+                    >
+                      <div
+                        className="w-24 h-24 bg-center bg-no-repeat bg-cover rounded-lg flex-shrink-0 bg-gray-100 dark:bg-gray-800"
+                        style={{ backgroundImage: `url("${getProviderAvatar(provider)}")` }}
+                      ></div>
+                      <div className="flex flex-col gap-2 flex-1 justify-between">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="material-symbols-outlined !text-xl text-yellow-500"
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                            >
+                              star
+                            </span>
+                            <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm font-medium">
+                              {provider.rating > 0 ? provider.rating : 'Novo'} <span className="font-normal">({provider.reviewsCount} avaliações)</span>
+                            </p>
+                          </div>
+                          <p className="text-text-light-primary dark:text-text-dark-primary text-lg font-bold leading-tight">
+                            {provider.name}
                           </p>
+                          {provider.professionalTitle && (
+                            <p className="text-xs text-primary font-semibold">
+                              {provider.professionalTitle}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-1 text-text-light-secondary dark:text-text-dark-secondary text-xs mt-0.5">
+                            <span className="material-symbols-outlined text-sm">location_on</span>
+                            <span>{provider.location}</span>
+                          </div>
+                          <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm font-normal line-clamp-2 mt-1">
+                            {provider.description}
+                          </p>
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 w-fit">
+                            {provider.category}
+                          </span>
                         </div>
-                        <p className="text-text-light-primary dark:text-text-dark-primary text-lg font-bold leading-tight">
-                          {provider.name}
-                        </p>
-                        <div className="flex items-center gap-1 text-text-light-secondary dark:text-text-dark-secondary text-xs">
-                          <span className="material-symbols-outlined text-sm">location_on</span>
-                          <span>{provider.location}</span>
-                        </div>
-                        <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm font-normal line-clamp-2">
-                          {provider.description}
-                        </p>
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 w-fit">
-                          {provider.category}
-                        </span>
+                        <button
+                          onClick={() => navigate('/profile')}
+                          className="flex w-fit cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide hover:bg-primary/90 transition-colors"
+                        >
+                          <span className="truncate">Ver Perfil</span>
+                        </button>
                       </div>
-                      <button
-                        onClick={() => navigate('/profile')}
-                        className="flex w-fit cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide hover:bg-primary/90 transition-colors"
-                      >
-                        <span className="truncate">Ver Perfil</span>
-                      </button>
                     </div>
+                  ))
+                ) : (
+                  <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 text-center bg-white dark:bg-card-dark rounded-xl border border-gray-200 dark:border-gray-800">
+                    <span className="material-symbols-outlined text-5xl text-gray-400 mb-3">search_off</span>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">Nenhum prestador encontrado</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md">
+                      {queryParam || categoryParam || cityParam
+                        ? 'Não encontramos nenhum prestador cadastrado e publicado com os filtros selecionados.'
+                        : 'Ainda não há prestadores de serviços publicados no catálogo.'}
+                    </p>
+                    <button
+                      onClick={clearFilters}
+                      className="px-5 py-2.5 bg-primary/10 text-primary font-bold text-sm rounded-lg hover:bg-primary/20 transition-colors"
+                    >
+                      Limpar Filtros
+                    </button>
                   </div>
-                ))
-              ) : (
-                <div className="col-span-full flex flex-col items-center justify-center py-10 text-center opacity-60">
-                  <span className="material-symbols-outlined text-4xl mb-2">search_off</span>
-                  <p className="text-lg font-bold">Nenhum resultado encontrado</p>
-                  <p className="text-sm">Tente limpar os filtros para ver mais.</p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Pagination */}
-            <nav aria-label="Pagination" className="flex items-center justify-center mt-8">
-              <ul className="flex items-center -space-x-px h-10 text-base">
-                <li>
-                  <a
-                    className="flex items-center justify-center px-4 h-10 ms-0 leading-tight text-text-light-secondary dark:text-text-dark-secondary bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-700 rounded-s-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-white cursor-pointer"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <span className="material-symbols-outlined !text-xl">chevron_left</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    aria-current="page"
-                    className="z-10 flex items-center justify-center px-4 h-10 leading-tight text-white bg-primary border border-primary hover:bg-primary/90 cursor-pointer"
-                  >
-                    1
-                  </a>
-                </li>
-                <li>
-                  <a
-                    className="flex items-center justify-center px-4 h-10 leading-tight text-text-light-secondary dark:text-text-dark-secondary bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-white cursor-pointer"
-                  >
-                    2
-                  </a>
-                </li>
-                <li>
-                  <a
-                    className="flex items-center justify-center px-4 h-10 leading-tight text-text-light-secondary dark:text-text-dark-secondary bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-white cursor-pointer"
-                  >
-                    3
-                  </a>
-                </li>
-                <li>
-                  <a
-                    className="flex items-center justify-center px-4 h-10 leading-tight text-text-light-secondary dark:text-text-dark-secondary bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-700 rounded-e-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-white cursor-pointer"
-                  >
-                    <span className="sr-only">Next</span>
-                    <span className="material-symbols-outlined !text-xl">chevron_right</span>
-                  </a>
-                </li>
-              </ul>
-            </nav>
+            {!loading && !error && totalPages > 1 && (
+              <nav aria-label="Paginação" className="flex items-center justify-center mt-8">
+                <ul className="flex items-center -space-x-px h-10 text-base">
+                  <li>
+                    <button
+                      disabled={pageParam <= 1}
+                      onClick={() => updateFilters({ page: pageParam - 1 })}
+                      className={`flex items-center justify-center px-4 h-10 ms-0 leading-tight bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-700 rounded-s-lg ${pageParam <= 1
+                          ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                          : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-white cursor-pointer'
+                        }`}
+                    >
+                      <span className="sr-only">Anterior</span>
+                      <span className="material-symbols-outlined !text-xl">chevron_left</span>
+                    </button>
+                  </li>
+
+                  {Array.from({ length: totalPages }).map((_, idx) => {
+                    const pageNum = idx + 1;
+                    const isActive = pageNum === pageParam;
+                    return (
+                      <li key={pageNum}>
+                        <button
+                          onClick={() => updateFilters({ page: pageNum })}
+                          className={`flex items-center justify-center px-4 h-10 leading-tight border ${isActive
+                              ? 'z-10 text-white bg-primary border-primary font-bold'
+                              : 'text-text-light-secondary dark:text-text-dark-secondary bg-white dark:bg-card-dark border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-white'
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      </li>
+                    );
+                  })}
+
+                  <li>
+                    <button
+                      disabled={pageParam >= totalPages}
+                      onClick={() => updateFilters({ page: pageParam + 1 })}
+                      className={`flex items-center justify-center px-4 h-10 leading-tight bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-700 rounded-e-lg ${pageParam >= totalPages
+                          ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                          : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-white cursor-pointer'
+                        }`}
+                    >
+                      <span className="sr-only">Próximo</span>
+                      <span className="material-symbols-outlined !text-xl">chevron_right</span>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            )}
           </div>
         </div>
       </main>

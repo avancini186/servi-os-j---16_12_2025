@@ -1,17 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-
-import { categories } from '../data/mockData';
+import { getCategories } from '../lib/catalog';
+import type { Category } from '../types';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAllCategories, setShowAllCategories] = useState(false);
 
-  const handleSearch = (category?: string) => {
-    navigate('/results', { state: { category } });
+  const fetchCategoriesData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getCategories();
+      setCategories(data);
+    } catch (err: any) {
+      console.error('Failed to load categories:', err);
+      setError('Não foi possível carregar as categorias. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategoriesData();
+  }, []);
+
+  const handleSearch = (categoryName?: string) => {
+    const params = new URLSearchParams();
+    if (searchTerm.trim()) {
+      params.set('q', searchTerm.trim());
+    }
+    if (categoryName) {
+      params.set('category', categoryName);
+    }
+    
+    const queryString = params.toString();
+    navigate(queryString ? `/results?${queryString}` : '/results');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const mapLimit = 11;
@@ -29,8 +64,8 @@ const HomePage: React.FC = () => {
               <h1 className="text-gray-900 dark:text-white text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
                 Que tipo de ajuda precisa hoje?
               </h1>
-
             </div>
+
             {/* Search Area */}
             <div className="bg-white dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 w-full max-w-4xl mx-auto">
               <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -42,13 +77,13 @@ const HomePage: React.FC = () => {
                     </div>
                     <input
                       className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-gray-900 dark:text-white focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-gray-500 dark:placeholder:text-gray-400 pl-2 text-base font-normal leading-normal"
-                      placeholder="Qual serviço você precisa?"
+                      placeholder="Qual serviço você precisa? (ex: Eletricista, Pintura...)"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyDown={handleKeyDown}
                     />
                   </div>
                 </label>
-                {/* TextField */}
 
                 <button
                   onClick={() => handleSearch()}
@@ -58,47 +93,75 @@ const HomePage: React.FC = () => {
                 </button>
               </div>
             </div>
+
             {/* SectionHeader */}
             <div className="mt-16 sm:mt-20 text-center">
               <h2 className="text-gray-900 dark:text-white text-2xl md:text-3xl font-bold tracking-tight">
                 Navegue por Categorias
               </h2>
             </div>
-            {/* Categories Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 mt-8">
-              {displayedCategories.map((cat, idx) => (
-                <a
-                  key={idx}
-                  className="flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer"
-                  onClick={() => handleSearch(cat.name)}
-                >
-                  <span className="material-symbols-outlined text-4xl text-primary mb-3">{cat.icon}</span>
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{cat.name}</span>
-                </a>
-              ))}
 
-              {categories.length > mapLimit && (
-                !showAllCategories ? (
+            {/* Loading State Skeleton */}
+            {loading && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 mt-8 animate-pulse">
+                {Array.from({ length: 12 }).map((_, idx) => (
+                  <div key={idx} className="h-28 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
+                ))}
+              </div>
+            )}
+
+            {/* Error State */}
+            {!loading && error && (
+              <div className="flex flex-col items-center justify-center mt-8 p-8 bg-red-50 dark:bg-red-950/30 rounded-xl border border-red-200 dark:border-red-900/50 text-center">
+                <span className="material-symbols-outlined text-4xl text-red-500 mb-2">error</span>
+                <p className="text-gray-800 dark:text-gray-200 font-medium mb-4">{error}</p>
+                <button
+                  onClick={fetchCategoriesData}
+                  className="px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            )}
+
+            {/* Categories Grid */}
+            {!loading && !error && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 mt-8">
+                {displayedCategories.map((cat) => (
                   <a
-                    className="flex flex-col items-center justify-center p-6 bg-primary/10 dark:bg-primary/20 rounded-xl border border-primary/20 dark:border-primary/30 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-primary cursor-pointer"
-                    onClick={() => setShowAllCategories(true)}
+                    key={cat.slug || cat.name}
+                    className="flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                    onClick={() => handleSearch(cat.name)}
                   >
-                    <span className="material-symbols-outlined text-4xl mb-3">apps</span>
-                    <span className="text-sm font-semibold">Ver todas</span>
+                    <span className="material-symbols-outlined text-4xl text-primary mb-3">{cat.icon}</span>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{cat.name}</span>
                   </a>
-                ) : (
-                  <a
-                    className="flex flex-col items-center justify-center p-6 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-gray-500 cursor-pointer"
-                    onClick={() => setShowAllCategories(false)}
-                  >
-                    <span className="material-symbols-outlined text-4xl mb-3">expand_less</span>
-                    <span className="text-sm font-semibold">Ver menos</span>
-                  </a>
-                )
-              )}
-            </div>
+                ))}
+
+                {categories.length > mapLimit && (
+                  !showAllCategories ? (
+                    <a
+                      className="flex flex-col items-center justify-center p-6 bg-primary/10 dark:bg-primary/20 rounded-xl border border-primary/20 dark:border-primary/30 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-primary cursor-pointer"
+                      onClick={() => setShowAllCategories(true)}
+                    >
+                      <span className="material-symbols-outlined text-4xl mb-3">apps</span>
+                      <span className="text-sm font-semibold">Ver todas</span>
+                    </a>
+                  ) : (
+                    <a
+                      className="flex flex-col items-center justify-center p-6 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-gray-500 cursor-pointer"
+                      onClick={() => setShowAllCategories(false)}
+                    >
+                      <span className="material-symbols-outlined text-4xl mb-3">expand_less</span>
+                      <span className="text-sm font-semibold">Ver menos</span>
+                    </a>
+                  )
+                )}
+              </div>
+            )}
           </div>
         </main>
+
         {/* Footer */}
         <footer className="flex justify-center bg-white dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-800 mt-20">
           <div className="w-full max-w-6xl px-6 py-8">
