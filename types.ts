@@ -45,3 +45,17 @@ export interface PortfolioItem {
   updatedAt?: string;
 }
 
+export interface ProfileCompletenessItem {
+  key: string;
+  label: string;
+  status: 'complete' | 'pending' | 'optional';
+  isRequired: boolean;
+}
+
+export interface ProfileCompleteness {
+  isComplete: boolean;
+  score: number;
+  items: ProfileCompletenessItem[];
+}
+
+

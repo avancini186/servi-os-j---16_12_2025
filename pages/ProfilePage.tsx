@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
+import ProfileCompletenessChecklist from '../components/ProfileCompletenessChecklist';
 import { getProviderProfile, DetailedProviderProfile } from '../lib/catalog';
+import { getProviderProfilePreview } from '../lib/provider';
+import { ProfileCompleteness } from '../types';
 
-const ProfilePage: React.FC = () => {
+interface ProfilePageProps {
+  previewMode?: boolean;
+}
+
+const ProfilePage: React.FC<ProfilePageProps> = ({ previewMode = false }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<DetailedProviderProfile | null>(null);
+  const [completeness, setCompleteness] = useState<ProfileCompleteness | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [forbiddenAccess, setForbiddenAccess] = useState(false);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'basicinfo' | 'portfolio' | 'reviews'>('basicinfo');
@@ -26,13 +35,36 @@ const ProfilePage: React.FC = () => {
     setLoading(true);
     setError(null);
     setNotFound(false);
+    setForbiddenAccess(false);
 
     try {
-      const data = await getProviderProfile(id);
-      if (!data) {
-        setNotFound(true);
+      if (previewMode) {
+        // Private preview mode for authenticated owner
+        const res = await getProviderProfilePreview(id);
+        if (!res.success) {
+          if (res.error === 'forbidden') {
+            setForbiddenAccess(true);
+            setError(res.errorMessage || 'Acesso negado. Você só pode visualizar o preview do seu próprio perfil.');
+          } else if (res.error === 'unauthorized') {
+            navigate('/auth/login');
+            return;
+          } else {
+            setNotFound(true);
+          }
+        } else if (res.profile) {
+          setProfile(res.profile);
+          if (res.completeness) {
+            setCompleteness(res.completeness);
+          }
+        }
       } else {
-        setProfile(data);
+        // Public mode: requires status = 'published'
+        const data = await getProviderProfile(id);
+        if (!data) {
+          setNotFound(true);
+        } else {
+          setProfile(data);
+        }
       }
     } catch (err: any) {
       console.error('Error loading provider profile:', err);
@@ -44,7 +76,7 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     fetchProfileData();
-  }, [id]);
+  }, [id, previewMode]);
 
   // Keyboard navigation for Lightbox
   useEffect(() => {
@@ -123,6 +155,39 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden font-display bg-background-light dark:bg-background-dark">
       <Header />
+
+      {/* Preview Mode Highlighted Top Banner */}
+      {previewMode && (
+        <div className="bg-amber-400 dark:bg-amber-500 text-slate-950 px-4 sm:px-8 py-3 border-b border-amber-500 shadow-md sticky top-0 z-40">
+          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-2xl font-bold animate-pulse">visibility</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-wider bg-slate-950 text-amber-400 px-2 py-0.5 rounded">
+                    Pré-visualização do Perfil
+                  </span>
+                  <span className="text-xs font-extrabold text-slate-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
+                    Status: Rascunho (Draft)
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-slate-900 mt-0.5">
+                  Este perfil ainda não está publicado no catálogo público. Apenas você consegue visualizá-lo.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('/onboarding')}
+              className="w-full sm:w-auto px-4 py-2 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5 whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-base">arrow_back</span>
+              <span>Voltar para editar</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="layout-container flex h-full grow flex-col">
         <main className="flex flex-1 justify-center py-5 sm:py-10 px-4 sm:px-10">
           <div className="layout-content-container flex flex-col w-full max-w-4xl flex-1 gap-8">
@@ -130,21 +195,40 @@ const ProfilePage: React.FC = () => {
             {/* Loading Skeleton */}
             {loading && (
               <div className="flex flex-col gap-8 animate-pulse">
-                <div className="h-44 bg-white dark:bg-slate-900 rounded-xl shadow-sm"></div>
-                <div className="h-12 bg-gray-200 dark:bg-slate-800 rounded-lg w-64"></div>
-                <div className="h-64 bg-white dark:bg-slate-900 rounded-xl shadow-sm"></div>
+                <div className="h-28 bg-white dark:bg-slate-900 rounded-2xl shadow-sm"></div>
+                <div className="h-44 bg-white dark:bg-slate-900 rounded-2xl shadow-sm"></div>
+                <div className="h-12 bg-gray-200 dark:bg-slate-800 rounded-xl w-64"></div>
+                <div className="h-64 bg-white dark:bg-slate-900 rounded-2xl shadow-sm"></div>
+              </div>
+            )}
+
+            {/* Forbidden Access Error State */}
+            {!loading && forbiddenAccess && (
+              <div className="flex flex-col items-center justify-center p-8 bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200 dark:border-red-900/50 text-center my-8 shadow-md max-w-lg mx-auto">
+                <span className="material-symbols-outlined text-6xl text-red-500 mb-3">gpp_bad</span>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Acesso Negado (403)</h2>
+                <p className="text-slate-600 dark:text-slate-300 text-sm mb-6 leading-relaxed">
+                  Você não possui permissão para visualizar o preview do perfil de outro prestador de serviço.
+                </p>
+                <button
+                  onClick={() => navigate('/onboarding')}
+                  className="px-6 py-2.5 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-colors shadow-md shadow-primary/20 flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg">arrow_back</span>
+                  <span>Ir para o meu onboarding</span>
+                </button>
               </div>
             )}
 
             {/* Error State */}
-            {!loading && error && (
-              <div className="flex flex-col items-center justify-center p-8 bg-red-50 dark:bg-red-950/30 rounded-xl border border-red-200 dark:border-red-900/50 text-center my-8">
+            {!loading && !forbiddenAccess && error && (
+              <div className="flex flex-col items-center justify-center p-8 bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200 dark:border-red-900/50 text-center my-8">
                 <span className="material-symbols-outlined text-5xl text-red-500 mb-3">error</span>
                 <p className="text-slate-900 dark:text-white text-lg font-bold mb-1">{error}</p>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">Ocorreu um erro ao buscar os dados do perfil.</p>
                 <button
                   onClick={fetchProfileData}
-                  className="px-6 py-2.5 bg-primary text-white font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors"
+                  className="px-6 py-2.5 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-colors"
                 >
                   Tentar novamente
                 </button>
@@ -152,32 +236,39 @@ const ProfilePage: React.FC = () => {
             )}
 
             {/* Not Found / Unpublished State */}
-            {!loading && !error && (notFound || !profile) && (
-              <div className="flex flex-col items-center justify-center py-16 px-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-center my-8 shadow-sm">
+            {!loading && !forbiddenAccess && !error && (notFound || !profile) && (
+              <div className="flex flex-col items-center justify-center py-16 px-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-center my-8 shadow-sm">
                 <span className="material-symbols-outlined text-6xl text-slate-400 mb-4">person_off</span>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Prestador não encontrado</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 max-w-md">
-                  O perfil solicitado não está disponível, foi removido ou ainda não está publicado no catálogo.
+                  {previewMode
+                    ? 'O perfil profissional solicitado não foi encontrado no banco de dados.'
+                    : 'O perfil solicitado não está disponível, foi removido ou ainda não está publicado no catálogo público.'}
                 </p>
                 <button
-                  onClick={() => navigate('/results')}
-                  className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
+                  onClick={() => navigate(previewMode ? '/onboarding' : '/results')}
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
                 >
                   <span className="material-symbols-outlined text-lg">arrow_back</span>
-                  Voltar para resultados
+                  <span>{previewMode ? 'Voltar para onboarding' : 'Voltar para resultados'}</span>
                 </button>
               </div>
             )}
 
             {/* Profile Content */}
-            {!loading && !error && profile && (
+            {!loading && !forbiddenAccess && !error && profile && (
               <>
-                {/* ProfileHeader */}
-                <section className="flex p-6 @container bg-white dark:bg-slate-900 rounded-xl shadow-sm">
+                {/* Completeness Checklist in Preview Mode */}
+                {previewMode && completeness && (
+                  <ProfileCompletenessChecklist completeness={completeness} />
+                )}
+
+                {/* Profile Header */}
+                <section className="flex p-6 @container bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
                   <div className="flex w-full flex-col gap-6 @[520px]:flex-row @[520px]:justify-between @[520px]:items-center">
                     <div className="flex gap-6 items-center">
                       <div
-                        className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-24 w-24 sm:h-32 sm:w-32 flex-shrink-0 bg-gray-100 dark:bg-gray-800"
+                        className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-24 w-24 sm:h-32 sm:w-32 flex-shrink-0 bg-gray-100 dark:bg-gray-800 border-2 border-primary/20"
                         style={{ backgroundImage: `url("${getAvatarUrl()}")` }}
                       ></div>
                       <div className="flex flex-col justify-center">
@@ -198,7 +289,7 @@ const ProfilePage: React.FC = () => {
                           <p className="text-sm font-normal leading-normal">
                             {profile.reviewsCount > 0
                               ? `${profile.rating} (${profile.reviewsCount} avaliações)`
-                              : 'Ainda não possui avaliações'}
+                              : 'Sem avaliações ainda'}
                           </p>
                         </div>
                       </div>
@@ -209,7 +300,7 @@ const ProfilePage: React.FC = () => {
                       {profile.phone && (
                         <button
                           onClick={() => window.location.href = getCallUrl(profile.phone)}
-                          className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] flex-1 @[480px]:flex-auto gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                          className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] flex-1 @[480px]:flex-auto gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                         >
                           <span className="material-symbols-outlined text-lg">call</span>
                           <span className="truncate">Ligar</span>
@@ -219,7 +310,7 @@ const ProfilePage: React.FC = () => {
                       {profile.whatsapp && (
                         <button
                           onClick={() => window.open(getWhatsAppUrl(profile.whatsapp), '_blank')}
-                          className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] flex-1 @[480px]:flex-auto gap-2 hover:bg-primary/90 transition-colors shadow-sm"
+                          className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] flex-1 @[480px]:flex-auto gap-2 hover:bg-primary/90 transition-colors shadow-sm"
                         >
                           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M16.75 13.96c.25.13.41.32.46.52.12.48-.13 1.05-.24 1.2l-.2.26c-.25.33-.58.6-1.11.66-.43.05-.85-.04-1.25-.22-1.42-.64-2.75-1.57-3.96-2.78-1.2-1.2-2.14-2.54-2.78-3.96-.18-.4-.27-.82-.22-1.25.06-.53.33-.86.66-1.11l.26-.2c.16-.12.62-.3 1.05-.24.2.05.39.21.52.46.48.97.98 1.94 1.46 2.9.1.2.13.41.08.6-.2.68-.42 1.35-.42 1.35s-.04.1.07.21c.43.43.95.84 1.54 1.25l.72.54c.12.08.26.06.36-.04.28-.28.56-.56.84-.85.2-.21.41-.17.6-.08.97.48 1.94.98 2.9 1.46zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
@@ -232,14 +323,14 @@ const ProfilePage: React.FC = () => {
                         <button
                           onClick={handleShare}
                           title="Compartilhar Perfil"
-                          className="flex min-w-[60px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex-1 sm:flex-none"
+                          className="flex min-w-[50px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex-1 sm:flex-none"
                         >
                           <span className="material-symbols-outlined text-lg">share</span>
                         </button>
                         <button
                           onClick={() => setIsFavorite(!isFavorite)}
                           title="Salvar nos Favoritos"
-                          className="flex min-w-[60px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors group flex-1 sm:flex-none"
+                          className="flex min-w-[50px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors group flex-1 sm:flex-none"
                         >
                           <span
                             className={`material-symbols-outlined text-lg transition-colors ${isFavorite ? 'text-red-500' : 'text-slate-900 dark:text-white group-hover:text-red-500'}`}
@@ -254,7 +345,7 @@ const ProfilePage: React.FC = () => {
                 </section>
 
                 {/* Tabs Navigation */}
-                <div className="flex border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto">
+                <div className="flex border-b border-slate-200 dark:border-slate-800 mb-2 overflow-x-auto">
                   {[
                     { id: 'basicinfo', label: 'Sobre mim' },
                     { id: 'portfolio', label: `Portfólio (${profile.portfolio.length})` },
@@ -263,10 +354,11 @@ const ProfilePage: React.FC = () => {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as 'basicinfo' | 'portfolio' | 'reviews')}
-                      className={`px-6 py-4 text-sm font-bold leading-normal tracking-[0.015em] transition-colors whitespace-nowrap border-b-2 ${activeTab === tab.id
-                        ? 'text-primary border-primary'
-                        : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300'
-                        }`}
+                      className={`px-6 py-4 text-sm font-bold leading-normal tracking-[0.015em] transition-colors whitespace-nowrap border-b-2 ${
+                        activeTab === tab.id
+                          ? 'text-primary border-primary'
+                          : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300'
+                      }`}
                     >
                       {tab.label}
                     </button>
@@ -274,13 +366,13 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 {/* Tab Content */}
-                <div className="min-h-[400px]">
+                <div className="min-h-[350px]">
 
                   {/* Basic Info Tab */}
                   {activeTab === 'basicinfo' && (
                     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       {/* About Me */}
-                      <section>
+                      <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                         <h2 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-3">
                           Sobre mim
                         </h2>
@@ -290,7 +382,7 @@ const ProfilePage: React.FC = () => {
                             : 'Este prestador ainda não adicionou uma descrição.'}
                         </p>
                         {profile.experienceYears !== undefined && profile.experienceYears !== null && profile.experienceYears > 0 && (
-                          <div className="inline-flex items-center gap-2 mt-3 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">
+                          <div className="inline-flex items-center gap-2 mt-4 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold">
                             <span className="material-symbols-outlined text-base">verified</span>
                             <span>{profile.experienceYears} anos de experiência</span>
                           </div>
@@ -299,7 +391,7 @@ const ProfilePage: React.FC = () => {
 
                       {/* Services */}
                       {profile.services.length > 0 && (
-                        <section>
+                        <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                           <h2 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-4">
                             Serviços Oferecidos
                           </h2>
@@ -307,7 +399,7 @@ const ProfilePage: React.FC = () => {
                             {profile.services.map((service) => (
                               <span
                                 key={service.id}
-                                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full text-sm font-semibold"
+                                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold"
                               >
                                 {service.name}
                               </span>
@@ -318,7 +410,7 @@ const ProfilePage: React.FC = () => {
 
                       {/* Social Media Links */}
                       {profile.socialLinks.length > 0 && (
-                        <section>
+                        <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                           <h3 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-4">
                             Redes Sociais & Links
                           </h3>
@@ -344,7 +436,7 @@ const ProfilePage: React.FC = () => {
                       )}
 
                       {/* Location / Service Areas */}
-                      <section>
+                      <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                         <h3 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-4">
                           Áreas de Atendimento
                         </h3>
@@ -354,12 +446,12 @@ const ProfilePage: React.FC = () => {
                             <p className="text-slate-900 dark:text-white font-bold text-sm">
                               {profile.locationCity
                                 ? `${profile.locationCity}${profile.locationState ? ' - ' + profile.locationState : ''}`
-                                : 'Localização principal'}
+                                : 'Localização principal não informada'}
                             </p>
                             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                               {profile.serviceAreas.length > 0
-                                ? `Atendimento nas cidades: ${profile.serviceAreas.map((sa) => sa.city).join(', ')}.`
-                                : 'Atendimento na região local.'}
+                                ? `Cidades adicionais de atendimento: ${profile.serviceAreas.map((sa) => sa.city).join(', ')}.`
+                                : 'Atendimento concentrado na cidade principal.'}
                             </p>
                           </div>
                         </div>
@@ -388,10 +480,26 @@ const ProfilePage: React.FC = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                          <span className="material-symbols-outlined text-5xl mb-2">photo_library</span>
-                          <p className="text-base font-bold text-slate-700 dark:text-slate-300">Portfólio vazio</p>
-                          <p className="text-xs">Este prestador ainda não adicionou fotos ao seu portfólio.</p>
+                        <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 gap-3">
+                          <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                            <span className="material-symbols-outlined text-3xl">photo_library</span>
+                          </div>
+                          <p className="text-base font-bold text-slate-700 dark:text-slate-300">
+                            Portfólio de trabalhos ainda não preenchido
+                          </p>
+                          <p className="text-xs max-w-sm">
+                            {previewMode
+                              ? 'Você ainda não adicionou fotos ao seu portfólio. Adicione fotos no onboarding para destacar seus serviços.'
+                              : 'Este prestador ainda não adicionou fotos ao seu portfólio.'}
+                          </p>
+                          {previewMode && (
+                            <button
+                              onClick={() => navigate('/onboarding')}
+                              className="mt-2 px-4 py-2 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
+                            >
+                              Adicionar fotos no onboarding
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -404,14 +512,16 @@ const ProfilePage: React.FC = () => {
                         profile.reviews.map((rev) => (
                           <div
                             key={rev.id}
-                            className="p-5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-sm"
+                            className="p-5 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-sm"
                           >
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-1">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                   <span
                                     key={star}
-                                    className={`material-symbols-outlined text-lg ${star <= rev.rating ? 'text-amber-500' : 'text-slate-300 dark:text-slate-700'}`}
+                                    className={`material-symbols-outlined text-lg ${
+                                      star <= rev.rating ? 'text-amber-500' : 'text-slate-300 dark:text-slate-700'
+                                    }`}
                                     style={{ fontVariationSettings: "'FILL' 1" }}
                                   >
                                     star
@@ -431,10 +541,16 @@ const ProfilePage: React.FC = () => {
                           </div>
                         ))
                       ) : (
-                        <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                          <span className="material-symbols-outlined text-5xl mb-2">rate_review</span>
-                          <p className="text-base font-bold text-slate-700 dark:text-slate-300">Ainda não possui avaliações</p>
-                          <p className="text-xs">Este prestador ainda não recebeu avaliações de clientes.</p>
+                        <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 gap-3">
+                          <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-3xl">rate_review</span>
+                          </div>
+                          <p className="text-base font-bold text-slate-700 dark:text-slate-300">
+                            Sem avaliações ainda
+                          </p>
+                          <p className="text-xs max-w-sm">
+                            Este prestador ainda não possui avaliações cadastradas por clientes.
+                          </p>
                         </div>
                       )}
                     </div>
