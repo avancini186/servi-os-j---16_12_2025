@@ -1,7 +1,13 @@
 import { supabase } from './supabase';
 import { getCurrentProfile } from './auth';
 import { DetailedProviderProfile } from './catalog';
-import { ProfileCompleteness, ProfileCompletenessItem } from '../types';
+import {
+  ProfileCompleteness,
+  ProfileCompletenessItem,
+  ProviderLifecycleStatus,
+  ProviderStatusHistory,
+  PublicationRequestResult,
+} from '../types';
 
 export interface ProviderPreviewResult {
   success: boolean;
@@ -303,3 +309,139 @@ export async function getProviderProfilePreview(
     };
   }
 }
+
+/**
+ * Request profile publication (transitions status from 'draft' to 'pending_review')
+ * Validates that profile is structurally complete before requesting.
+ * Inserts entry into provider_status_history for audit trail.
+ */
+export async function requestPublication(
+  providerId: number
+): Promise<PublicationRequestResult> {
+  try {
+    const userProfile = await getCurrentProfile();
+    if (!userProfile || userProfile.role !== 'provider') {
+      return {
+        success: false,
+        error: 'unauthorized',
+        errorMessage: 'Apenas prestadores autenticados podem solicitar publicação.',
+      };
+    }
+
+    // 1. Fetch current profile preview to validate ownership and completeness
+    const previewRes = await getProviderProfilePreview(providerId);
+    if (!previewRes.success || !previewRes.profile || !previewRes.completeness) {
+      return {
+        success: false,
+        error: previewRes.error || 'forbidden',
+        errorMessage: previewRes.errorMessage || 'Não foi possível carregar o perfil para validação.',
+      };
+    }
+
+    const currentStatus = (previewRes.profile.status || 'draft') as ProviderLifecycleStatus;
+
+    // Check if already in pending_review, published, etc.
+    if (currentStatus === 'pending_review') {
+      return {
+        success: true,
+        newStatus: 'pending_review',
+        errorMessage: 'Seu perfil já está em análise aguardando ativação.',
+      };
+    }
+
+    if (currentStatus === 'published') {
+      return {
+        success: true,
+        newStatus: 'published',
+        errorMessage: 'Seu perfil já está publicado no catálogo público.',
+      };
+    }
+
+    // 2. Validate structural completeness
+    if (!previewRes.completeness.isComplete) {
+      return {
+        success: false,
+        error: 'incomplete_profile',
+        errorMessage: 'Complete as informações obrigatórias do seu perfil (Título, Cidade, Estado e Serviços) para solicitar a publicação.',
+      };
+    }
+
+    // 3. Update status in provider_profiles to 'pending_review'
+    const { error: updateError } = await supabase
+      .from('provider_profiles')
+      .update({
+        status: 'pending_review',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', providerId);
+
+    if (updateError) {
+      console.error('Error updating status to pending_review:', updateError);
+      return {
+        success: false,
+        error: 'database_error',
+        errorMessage: 'Falha ao alterar o status do perfil no banco de dados.',
+      };
+    }
+
+    // 4. Record audit entry in provider_status_history
+    const { error: historyError } = await supabase
+      .from('provider_status_history')
+      .insert({
+        provider_id: providerId,
+        from_status: currentStatus,
+        to_status: 'pending_review',
+        changed_by: userProfile.userId || null,
+      });
+
+    if (historyError) {
+      console.warn('Warning: Status updated to pending_review, but failed to log history:', historyError);
+    }
+
+    return {
+      success: true,
+      newStatus: 'pending_review',
+    };
+  } catch (err: any) {
+    console.error('Error in requestPublication:', err);
+    return {
+      success: false,
+      error: 'exception',
+      errorMessage: err?.message || 'Erro inesperado ao solicitar publicação.',
+    };
+  }
+}
+
+/**
+ * Fetch status change history for a provider profile
+ */
+export async function getProviderStatusHistory(
+  providerId: number
+): Promise<ProviderStatusHistory[]> {
+  try {
+    const { data, error } = await supabase
+      .from('provider_status_history')
+      .select('*')
+      .eq('provider_id', providerId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching status history:', error);
+      return [];
+    }
+
+    return (data || []).map((h: any) => ({
+      id: h.id,
+      providerId: h.provider_id,
+      fromStatus: h.from_status,
+      toStatus: h.to_status,
+      changedBy: h.changed_by,
+      rejectionReason: h.rejection_reason,
+      createdAt: h.created_at,
+    }));
+  } catch (err) {
+    console.error('Error in getProviderStatusHistory:', err);
+    return [];
+  }
+}
+

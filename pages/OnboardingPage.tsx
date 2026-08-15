@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import PortfolioManager from '../components/PortfolioManager';
 import { getCategories } from '../lib/catalog';
 import { getProviderDraft, saveProviderDraft, ExistingProviderDraft } from '../lib/onboarding';
+import { requestPublication } from '../lib/provider';
 import { supabase } from '../lib/supabase';
 import type { Category } from '../types';
 
@@ -33,6 +34,10 @@ const OnboardingPage: React.FC = () => {
   const [newCityInput, setNewCityInput] = useState('');
   const [additionalCities, setAdditionalCities] = useState<string[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
+
+  // Publication Request Modal & State
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestingPublication, setRequestingPublication] = useState(false);
 
   // DB Metadata
   const [categories, setCategories] = useState<Category[]>([]);
@@ -154,12 +159,12 @@ const OnboardingPage: React.FC = () => {
       if (!result.success) {
         setError(result.error || 'Falha ao salvar rascunho do perfil.');
       } else {
-        // Refresh provider draft to ensure providerId is available for portfolio
+        // Refresh provider draft to ensure providerId is available
         const updatedDraft = await getProviderDraft();
         if (updatedDraft) {
           setExistingDraft(updatedDraft);
         }
-        setSuccessBanner('Perfil salvo com sucesso (Status: Rascunho). Você pode gerenciar seu portfólio de fotos abaixo.');
+        setSuccessBanner('Perfil salvo com sucesso! Você pode gerenciar seu portfólio e solicitar a publicação abaixo.');
       }
     } catch (err: any) {
       console.error('Error saving onboarding:', err);
@@ -168,6 +173,36 @@ const OnboardingPage: React.FC = () => {
       setSaving(false);
     }
   };
+
+  const handleConfirmRequestPublication = async () => {
+    if (!existingDraft) return;
+
+    setRequestingPublication(true);
+    setError(null);
+
+    try {
+      const res = await requestPublication(existingDraft.id);
+      if (!res.success) {
+        setError(res.errorMessage || 'Falha ao solicitar publicação do perfil.');
+      } else {
+        setExistingDraft((prev) => (prev ? { ...prev, status: 'pending_review' } : prev));
+        setShowRequestModal(false);
+        setSuccessBanner('Solicitação de publicação enviada com sucesso! Seu perfil está em análise.');
+      }
+    } catch (err: any) {
+      console.error('Error requesting publication:', err);
+      setError('Erro inesperado ao solicitar publicação.');
+    } finally {
+      setRequestingPublication(false);
+    }
+  };
+
+  // Check structural completeness (P7 criteria: Title, City, State, >= 1 Service)
+  const isProfileComplete =
+    !!professionalTitle.trim() &&
+    !!locationCity.trim() &&
+    !!locationState.trim() &&
+    selectedServiceIds.length > 0;
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark font-display flex flex-col">
@@ -190,12 +225,28 @@ const OnboardingPage: React.FC = () => {
                       Onboarding Profissional
                     </h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                      Preencha os dados do seu perfil para criar e gerenciar seu rascunho de prestador de serviço.
+                      Preencha os dados do seu perfil para criar e gerenciar seu perfil de prestador de serviço.
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className="inline-block px-3 py-1 bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-full">
-                      Status: Rascunho (Draft)
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                        existingDraft?.status === 'published'
+                          ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
+                          : existingDraft?.status === 'pending_review'
+                          ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300'
+                          : existingDraft?.status === 'rejected'
+                          ? 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300'
+                          : 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
+                      }`}
+                    >
+                      Status: {existingDraft?.status === 'published'
+                        ? 'Publicado'
+                        : existingDraft?.status === 'pending_review'
+                        ? 'Em Análise'
+                        : existingDraft?.status === 'rejected'
+                        ? 'Recusado'
+                        : 'Rascunho (Draft)'}
                     </span>
                     {existingDraft && (
                       <button
@@ -222,6 +273,24 @@ const OnboardingPage: React.FC = () => {
                 <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 text-sm font-semibold rounded-xl border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2">
                   <span className="material-symbols-outlined text-xl text-emerald-600">check_circle</span>
                   <span>{successBanner}</span>
+                </div>
+              )}
+
+              {/* Rejection Notice Banner */}
+              {existingDraft?.status === 'rejected' && (
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-sm font-semibold rounded-xl border border-red-200 dark:border-red-900/50 flex flex-col gap-1">
+                  <div className="flex items-center gap-2 font-bold text-red-800 dark:text-red-200">
+                    <span className="material-symbols-outlined text-xl">cancel</span>
+                    <span>Seu perfil foi recusado durante a análise.</span>
+                  </div>
+                  {existingDraft.rejectionReason && (
+                    <p className="text-xs text-red-600 dark:text-red-400 pl-7">
+                      Motivo da recusa: {existingDraft.rejectionReason}
+                    </p>
+                  )}
+                  <p className="text-xs text-red-500 pl-7 mt-1">
+                    Corrija as informações necessárias abaixo e envie uma nova solicitação.
+                  </p>
                 </div>
               )}
 
@@ -494,9 +563,169 @@ const OnboardingPage: React.FC = () => {
                 </p>
               </section>
             )}
+
+            {/* Step 6: Publication Request Section */}
+            {existingDraft?.id && (
+              <section className="bg-white dark:bg-card-dark rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-200 dark:border-gray-800 flex flex-col gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-extrabold">
+                        6
+                      </span>
+                      <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                        Solicitação de Publicação
+                      </h2>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                      Envie seu perfil profissional estruturalmente completo para análise e ativação.
+                    </p>
+                  </div>
+
+                  <span
+                    className={`px-3.5 py-1 rounded-full text-xs font-extrabold border ${
+                      existingDraft.status === 'published'
+                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300'
+                        : existingDraft.status === 'pending_review'
+                        ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border-blue-300'
+                        : existingDraft.status === 'rejected'
+                        ? 'bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border-red-300'
+                        : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300'
+                    }`}
+                  >
+                    {existingDraft.status === 'published'
+                      ? '● Publicado'
+                      : existingDraft.status === 'pending_review'
+                      ? '● Solicitação em Análise'
+                      : existingDraft.status === 'rejected'
+                      ? '● Recusado'
+                      : '● Rascunho (Draft)'}
+                  </span>
+                </div>
+
+                {/* Status Box for Pending Review */}
+                {existingDraft.status === 'pending_review' && (
+                  <div className="p-5 bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 rounded-xl border border-blue-200 dark:border-blue-900/50 flex items-start gap-3">
+                    <span className="material-symbols-outlined text-blue-600 text-2xl mt-0.5">hourglass_top</span>
+                    <div className="flex flex-col gap-1 text-xs sm:text-sm">
+                      <span className="font-bold text-sm">Solicitação enviada. Seu perfil está aguardando ativação.</span>
+                      <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
+                        Sua solicitação de publicação foi registrada com sucesso. Enquanto seu perfil é analisado, ele permanece invisível no catálogo público e disponível em modo de pré-visualização privada.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Box for Published */}
+                {existingDraft.status === 'published' && (
+                  <div className="p-5 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 rounded-xl border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-emerald-600 text-2xl">verified</span>
+                    <div className="flex flex-col text-xs sm:text-sm">
+                      <span className="font-bold text-sm">Seu perfil está publicado e ativo no catálogo público!</span>
+                      <span className="text-xs text-slate-600 dark:text-slate-300">
+                        Clientes já conseguem encontrar seu perfil em buscas e visualizar seus serviços.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Draft / Rejected Action Area */}
+                {(existingDraft.status === 'draft' || existingDraft.status === 'rejected') && (
+                  <div className="flex flex-col gap-4">
+                    {isProfileComplete ? (
+                      <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-900/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-emerald-600 text-2xl">verified</span>
+                          <div>
+                            <span className="font-bold text-slate-900 dark:text-white text-sm block">
+                              Seu perfil está pronto para ser enviado!
+                            </span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                              Todas as informações obrigatórias (Título, Cidade, Estado e Serviços) foram preenchidas.
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowRequestModal(true)}
+                          disabled={requestingPublication}
+                          className="w-full sm:w-auto px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 whitespace-nowrap"
+                        >
+                          <span className="material-symbols-outlined text-lg">send</span>
+                          <span>Solicitar publicação</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/50 flex flex-col gap-2">
+                        <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300 text-sm">
+                          <span className="material-symbols-outlined text-xl">warning</span>
+                          <span>Ainda faltam algumas informações para solicitar a publicação.</span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 pl-7 leading-relaxed">
+                          Complete as informações obrigatórias do seu perfil (Título profissional, Cidade principal, Estado UF e pelo menos 1 Serviço) nas etapas 1 a 4 acima.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-800 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      ℹ️ <strong>Ativação Comercial:</strong> A exibição do seu perfil no catálogo dependerá da futura validação comercial e integração de pagamentos.
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
           </>
         )}
       </main>
+
+      {/* Confirmation Modal for Publication Request */}
+      {showRequestModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-card-dark w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col">
+            <div className="p-6 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <span className="material-symbols-outlined text-2xl">send</span>
+              </div>
+              <h3 className="font-bold text-lg text-slate-900 dark:text-white">
+                Enviar perfil para análise?
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Seu perfil será enviado para análise. Deseja continuar?
+              </p>
+              <p className="text-xs text-slate-400">
+                O status do seu perfil será alterado para <strong className="text-blue-500">pending_review</strong> enquanto aguarda a ativação comercial.
+              </p>
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowRequestModal(false)}
+                disabled={requestingPublication}
+                className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRequestPublication}
+                disabled={requestingPublication}
+                className="flex items-center gap-2 px-5 py-2 bg-primary text-white font-bold text-xs rounded-xl hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
+              >
+                {requestingPublication ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Enviando...</span>
+                  </>
+                ) : (
+                  <span>Solicitar publicação</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

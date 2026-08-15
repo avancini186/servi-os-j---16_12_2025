@@ -99,5 +99,25 @@ export interface ActivationEligibility {
   reasons: string[];
 }
 
+export type ProviderLifecycleStatus = 'draft' | 'pending_review' | 'published' | 'suspended' | 'rejected';
+
+export interface ProviderStatusHistory {
+  id: number;
+  providerId: number;
+  fromStatus: ProviderLifecycleStatus;
+  toStatus: ProviderLifecycleStatus;
+  changedBy?: string;
+  rejectionReason?: string;
+  createdAt: string;
+}
+
+export interface PublicationRequestResult {
+  success: boolean;
+  newStatus?: ProviderLifecycleStatus;
+  error?: string;
+  errorMessage?: string;
+}
+
+
 
 

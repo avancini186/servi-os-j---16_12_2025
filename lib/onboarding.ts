@@ -24,6 +24,7 @@ export interface ExistingProviderDraft {
   locationCity: string;
   locationState: string;
   status: string;
+  rejectionReason?: string;
   serviceIds: number[];
   additionalCities: string[];
 }
@@ -50,7 +51,8 @@ export async function getProviderDraft(): Promise<ExistingProviderDraft | null> 
         whatsapp,
         location_city,
         location_state,
-        status
+        status,
+        rejection_reason
       `)
       .eq('profile_id', userProfile.id)
       .maybeSingle();
@@ -86,6 +88,7 @@ export async function getProviderDraft(): Promise<ExistingProviderDraft | null> 
       locationCity: providerProfile.location_city || '',
       locationState: providerProfile.location_state || 'SP',
       status: providerProfile.status || 'draft',
+      rejectionReason: providerProfile.rejection_reason || undefined,
       serviceIds: serviceIds,
       additionalCities: additionalCities,
     };

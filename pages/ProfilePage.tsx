@@ -167,12 +167,22 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ previewMode = false }) => {
                   <span className="text-xs font-black uppercase tracking-wider bg-slate-950 text-amber-400 px-2 py-0.5 rounded">
                     Pré-visualização do Perfil
                   </span>
-                  <span className="text-xs font-extrabold text-slate-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
-                    Status: Rascunho (Draft)
+                  <span className="text-xs font-extrabold text-slate-900 bg-amber-200/90 px-2.5 py-0.5 rounded-full">
+                    Status: {profile?.status === 'published'
+                      ? 'Publicado'
+                      : profile?.status === 'pending_review'
+                      ? 'Em Análise (Pending Review)'
+                      : profile?.status === 'rejected'
+                      ? 'Recusado'
+                      : 'Rascunho (Draft)'}
                   </span>
                 </div>
                 <p className="text-xs font-semibold text-slate-900 mt-0.5">
-                  Este perfil ainda não está publicado no catálogo público. Apenas você consegue visualizá-lo.
+                  {profile?.status === 'published'
+                    ? 'Seu perfil está atualmente publicado no catálogo público.'
+                    : profile?.status === 'pending_review'
+                    ? 'Seu perfil foi enviado para análise e aguarda ativação comercial.'
+                    : 'Este perfil ainda não está publicado no catálogo público. Apenas você consegue visualizá-lo.'}
                 </p>
               </div>
             </div>
