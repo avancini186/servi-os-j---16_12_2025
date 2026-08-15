@@ -12,6 +12,7 @@ const App: React.FC = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:id" element={<ProfilePage />} />
         <Route path="/auth/:type" element={<AuthPage />} />
       </Routes>
     </HashRouter>

@@ -301,7 +301,7 @@ const ResultsPage: React.FC = () => {
                           </span>
                         </div>
                         <button
-                          onClick={() => navigate('/profile')}
+                          onClick={() => navigate(`/profile/${provider.id}`)}
                           className="flex w-fit cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide hover:bg-primary/90 transition-colors"
                         >
                           <span className="truncate">Ver Perfil</span>
