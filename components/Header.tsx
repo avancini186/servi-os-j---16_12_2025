@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import type { User } from '@supabase/supabase-js';
+import { getCurrentProfile, UserProfile } from '../lib/auth';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  const fetchProfile = async () => {
+    const userProfile = await getCurrentProfile();
+    setProfile(userProfile);
+  };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
+    fetchProfile();
 
-    // Listen for auth changes
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (session) {
+        fetchProfile();
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -32,17 +38,17 @@ const Header: React.FC = () => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    setProfile(null);
     navigate('/');
     closeMenu();
   };
 
-  // Helper to get initials or avatar URL
   const getAvatarUrl = () => {
-    if (user?.user_metadata?.avatar_url) {
-      return user.user_metadata.avatar_url;
+    if (profile?.avatarUrl && profile.avatarUrl.trim()) {
+      return profile.avatarUrl;
     }
-    const name = user?.user_metadata?.name || user?.email || 'User';
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+    const name = profile?.name || 'User';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=137fec&color=fff`;
   };
 
   return (
@@ -65,22 +71,34 @@ const Header: React.FC = () => {
           <a onClick={() => navigate('/results')} className="text-sm font-medium text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary cursor-pointer transition-colors">
             Buscar Serviços
           </a>
-          <a className="text-sm font-medium text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary cursor-pointer transition-colors">
-            Categorias
-          </a>
         </nav>
 
         {/* Desktop Auth/User & Mobile Toggle */}
         <div className="flex items-center gap-4">
-          {/* Desktop Only Buttons / Avatar */}
+          {/* Desktop User Info & SignOut */}
           <div className="hidden md:flex items-center gap-4">
-            {user ? (
-              <div 
-                className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => navigate('/profile')}
-                title="Meu Perfil"
-              >
-                <img src={getAvatarUrl()} alt="User Avatar" className="w-full h-full object-cover" />
+            {profile ? (
+              <div className="flex items-center gap-3">
+                <img
+                  src={getAvatarUrl()}
+                  alt="User Avatar"
+                  className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
+                />
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                    {profile.name}
+                  </span>
+                  <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">
+                    {profile.role === 'provider' ? 'Prestador' : 'Cliente'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  title="Sair"
+                  className="ml-2 flex items-center justify-center p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xl">logout</span>
+                </button>
               </div>
             ) : (
               <>
@@ -131,35 +149,21 @@ const Header: React.FC = () => {
               <span className="material-symbols-outlined text-gray-500">search</span>
               Buscar Serviços
             </a>
-            <a
-              onClick={closeMenu}
-              className="flex items-center gap-3 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white font-medium"
-            >
-              <span className="material-symbols-outlined text-gray-500">category</span>
-              Categorias
-            </a>
             <div className="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
             <div className="flex flex-col gap-3 px-2">
-              {user ? (
+              {profile ? (
                 <>
                   <div className="flex items-center gap-3 px-2 py-2 mb-2">
-                    <img src={getAvatarUrl()} alt="User Avatar" className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700" />
+                    <img src={getAvatarUrl()} alt="User Avatar" className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 object-cover" />
                     <div className="flex flex-col overflow-hidden">
                       <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        {user.user_metadata?.name || 'Usuário'}
+                        {profile.name}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {user.email}
+                      <span className="text-xs text-primary font-semibold uppercase">
+                        {profile.role === 'provider' ? 'Prestador' : 'Cliente'} ({profile.email})
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => { navigate('/profile'); closeMenu(); }}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg h-10 bg-primary/10 text-primary font-bold text-sm hover:bg-primary/20 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-sm">person</span>
-                    Meu Perfil
-                  </button>
                   <button
                     onClick={handleSignOut}
                     className="w-full flex items-center justify-center gap-2 rounded-lg h-10 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
