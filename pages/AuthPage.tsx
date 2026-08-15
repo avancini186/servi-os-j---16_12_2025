@@ -77,9 +77,11 @@ const AuthPage: React.FC = () => {
 
         if (signUpError) throw signUpError;
 
+        const targetRoute = isProvider ? '/onboarding' : redirectPath;
+
         setSuccessMessage('Conta criada com sucesso! Redirecionando...');
         setTimeout(() => {
-          navigate(redirectPath);
+          navigate(targetRoute);
         }, 1200);
       } else if (mode === 'login') {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -89,9 +91,11 @@ const AuthPage: React.FC = () => {
 
         if (signInError) throw signInError;
 
+        const targetRoute = isProvider ? '/onboarding' : redirectPath;
+
         setSuccessMessage('Login realizado com sucesso!');
         setTimeout(() => {
-          navigate(redirectPath);
+          navigate(targetRoute);
         }, 800);
       } else if (mode === 'forgot') {
         const result = await requestPasswordReset(email);
