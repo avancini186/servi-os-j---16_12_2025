@@ -33,3 +33,15 @@ export interface ServiceItem {
   slug: string;
   description?: string;
 }
+
+export interface PortfolioItem {
+  id: number;
+  providerId: number;
+  imageUrl: string;
+  title?: string;
+  description?: string;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
