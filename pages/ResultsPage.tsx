@@ -215,19 +215,43 @@ const ResultsPage: React.FC = () => {
 
           {/* Results Main Content */}
           <div className="col-span-1 md:col-span-3">
-            {/* PageHeading */}
-            <div className="flex flex-wrap justify-between gap-4 mb-6">
+            {/* PageHeading & Search Input */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div className="flex flex-col gap-1">
-                <h1 className="text-text-light-primary dark:text-text-dark-primary text-3xl font-black tracking-tighter">
+                <h1 className="text-text-light-primary dark:text-text-dark-primary text-2xl sm:text-3xl font-black tracking-tighter">
                   {queryParam
                     ? `Resultados para "${queryParam}"`
                     : categoryParam
                       ? `Resultados em "${categoryParam}"`
                       : 'Prestadores de Serviço'}
                 </h1>
-                <p className="text-text-light-secondary dark:text-text-dark-secondary text-base font-normal">
+                <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm font-normal">
                   {loading ? 'Buscando prestadores...' : `${totalCount} prestador(es) encontrado(s)`}
                 </p>
+              </div>
+
+              {/* Inline Search Bar */}
+              <div className="relative w-full sm:w-72">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">
+                  search
+                </span>
+                <input
+                  type="text"
+                  key={queryParam}
+                  defaultValue={queryParam}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      updateFilters({ q: (e.target as HTMLInputElement).value || null });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value !== queryParam) {
+                      updateFilters({ q: e.target.value || null });
+                    }
+                  }}
+                  placeholder="Pesquisar serviço (ex: Eletricista)..."
+                  className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary text-slate-900 dark:text-white"
+                />
               </div>
             </div>
 
@@ -245,7 +269,7 @@ const ResultsPage: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-12 px-6 bg-red-50 dark:bg-red-950/30 rounded-xl border border-red-200 dark:border-red-900/50 text-center">
                 <span className="material-symbols-outlined text-5xl text-red-500 mb-3">error</span>
                 <p className="text-gray-900 dark:text-white text-lg font-bold mb-1">{error}</p>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Ocorreu uma falha ao conectar com o banco de dados.</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Não conseguimos carregar os resultados do banco de dados.</p>
                 <button
                   onClick={fetchProviders}
                   className="px-6 py-2.5 bg-primary text-white font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
@@ -262,47 +286,52 @@ const ResultsPage: React.FC = () => {
                   providers.map((provider) => (
                     <div
                       key={provider.id}
-                      className="flex items-stretch justify-between gap-4 rounded-xl bg-white dark:bg-card-dark p-4 shadow-sm transition-shadow hover:shadow-lg"
+                      className="flex items-stretch justify-between gap-4 rounded-xl bg-white dark:bg-card-dark p-4 shadow-sm transition-shadow hover:shadow-lg border border-gray-100 dark:border-gray-800"
                     >
                       <div
-                        className="w-24 h-24 bg-center bg-no-repeat bg-cover rounded-lg flex-shrink-0 bg-gray-100 dark:bg-gray-800"
+                        className="w-24 h-24 bg-center bg-no-repeat bg-cover rounded-lg flex-shrink-0 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
                         style={{ backgroundImage: `url("${getProviderAvatar(provider)}")` }}
                       ></div>
                       <div className="flex flex-col gap-2 flex-1 justify-between">
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="material-symbols-outlined !text-xl text-yellow-500"
-                              style={{ fontVariationSettings: "'FILL' 1" }}
-                            >
-                              star
-                            </span>
-                            <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm font-medium">
-                              {provider.rating > 0 ? provider.rating : 'Novo'} <span className="font-normal">({provider.reviewsCount} avaliações)</span>
-                            </p>
-                          </div>
-                          <p className="text-text-light-primary dark:text-text-dark-primary text-lg font-bold leading-tight">
+                        <div className="flex flex-col gap-1">
+                          {/* Rating Display */}
+                          {provider.reviewsCount > 0 ? (
+                            <div className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-200">
+                              <span className="material-symbols-outlined text-sm text-amber-500">star</span>
+                              <span>{provider.rating.toFixed(1)}</span>
+                              <span className="text-slate-400 font-normal">
+                                ({provider.reviewsCount} {provider.reviewsCount === 1 ? 'avaliação' : 'avaliações'})
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-xs text-slate-400 font-medium">
+                              <span className="material-symbols-outlined text-sm text-slate-300">star_outline</span>
+                              <span>Ainda sem avaliações</span>
+                            </div>
+                          )}
+
+                          <p className="text-text-light-primary dark:text-text-dark-primary text-base font-bold leading-tight">
                             {provider.name}
                           </p>
                           {provider.professionalTitle && (
-                            <p className="text-xs text-primary font-semibold">
+                            <p className="text-xs text-primary font-bold">
                               {provider.professionalTitle}
                             </p>
                           )}
-                          <div className="flex items-center gap-1 text-text-light-secondary dark:text-text-dark-secondary text-xs mt-0.5">
+                          <div className="flex items-center gap-1 text-text-light-secondary dark:text-text-dark-secondary text-xs">
                             <span className="material-symbols-outlined text-sm">location_on</span>
                             <span>{provider.location}</span>
                           </div>
-                          <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm font-normal line-clamp-2 mt-1">
+                          <p className="text-text-light-secondary dark:text-text-dark-secondary text-xs font-normal line-clamp-2 mt-0.5">
                             {provider.description}
                           </p>
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 w-fit">
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 w-fit">
                             {provider.category}
                           </span>
                         </div>
                         <button
                           onClick={() => navigate(`/profile/${provider.id}`)}
-                          className="flex w-fit cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide hover:bg-primary/90 transition-colors"
+                          className="flex w-fit cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-primary text-white text-xs font-bold leading-normal tracking-wide hover:bg-primary/90 transition-colors shadow-sm"
                         >
                           <span className="truncate">Ver Perfil</span>
                         </button>
@@ -315,7 +344,7 @@ const ResultsPage: React.FC = () => {
                     <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">Nenhum prestador encontrado</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md">
                       {queryParam || categoryParam || cityParam
-                        ? 'Não encontramos nenhum prestador cadastrado e publicado com os filtros selecionados.'
+                        ? 'Não encontramos nenhum prestador publicado com os filtros selecionados.'
                         : 'Ainda não há prestadores de serviços publicados no catálogo.'}
                     </p>
                     <button

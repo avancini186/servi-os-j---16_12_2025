@@ -78,6 +78,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ previewMode = false }) => {
     fetchProfileData();
   }, [id, previewMode]);
 
+  // Dynamic document title update
+  useEffect(() => {
+    if (profile) {
+      document.title = `${profile.name} — ${profile.professionalTitle || 'Prestador de Serviço'} | Serviços Já`;
+    } else {
+      document.title = 'Serviços Já';
+    }
+    return () => {
+      document.title = 'Serviços Já';
+    };
+  }, [profile]);
+
   // Keyboard navigation for Lightbox
   useEffect(() => {
     const portfolioImages = profile?.portfolio || [];

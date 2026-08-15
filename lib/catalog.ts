@@ -41,6 +41,18 @@ export interface DetailedProviderProfile {
 }
 
 /**
+ * Helper to normalize string for case-insensitive & accent-insensitive comparison
+ */
+export function normalizeString(str: string): string {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/**
  * Fetch all categories from Supabase database
  */
 export async function getCategories(): Promise<Category[]> {
@@ -216,17 +228,16 @@ export async function searchProviders(options: SearchOptions = {}): Promise<Sear
     });
 
     if (category && category.trim()) {
-      const catLower = category.trim().toLowerCase();
+      const catNormalized = normalizeString(category);
       resultList = resultList.filter((p) =>
-        p.category.toLowerCase() === catLower ||
-        p.category.toLowerCase().includes(catLower)
+        normalizeString(p.category).includes(catNormalized)
       );
     }
 
     if (city && city.trim()) {
-      const cityLower = city.trim().toLowerCase();
+      const cityNormalized = normalizeString(city);
       resultList = resultList.filter((p) =>
-        p.location.toLowerCase().includes(cityLower)
+        normalizeString(p.location).includes(cityNormalized)
       );
     }
 
@@ -235,15 +246,14 @@ export async function searchProviders(options: SearchOptions = {}): Promise<Sear
     }
 
     if (query && query.trim()) {
-      const qLower = query.trim().toLowerCase();
-      resultList = resultList.filter((p) => {
-        const nameMatch = p.name.toLowerCase().includes(qLower);
-        const titleMatch = (p.professionalTitle || '').toLowerCase().includes(qLower);
-        const catMatch = p.category.toLowerCase().includes(qLower);
-        const descMatch = p.description.toLowerCase().includes(qLower);
-        const servicesMatch = (p.services || []).some((s) => s.toLowerCase().includes(qLower));
+      const normalizedQuery = normalizeString(query);
+      const queryTerms = normalizedQuery.split(/\s+/).filter(Boolean);
 
-        return nameMatch || titleMatch || catMatch || descMatch || servicesMatch;
+      resultList = resultList.filter((p) => {
+        const fullText = normalizeString(
+          `${p.name} ${p.professionalTitle || ''} ${p.category} ${p.description} ${p.location} ${(p.services || []).join(' ')}`
+        );
+        return queryTerms.every((term) => fullText.includes(term));
       });
     }
 
