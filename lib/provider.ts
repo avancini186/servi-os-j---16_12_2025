@@ -384,19 +384,8 @@ export async function requestPublication(
       };
     }
 
-    // 4. Record audit entry in provider_status_history
-    const { error: historyError } = await supabase
-      .from('provider_status_history')
-      .insert({
-        provider_id: providerId,
-        from_status: currentStatus,
-        to_status: 'pending_review',
-        changed_by: userProfile.userId || null,
-      });
+    // Server-side trigger trg_provider_status_history automatically records the status transition in provider_status_history safely.
 
-    if (historyError) {
-      console.warn('Warning: Status updated to pending_review, but failed to log history:', historyError);
-    }
 
     return {
       success: true,
