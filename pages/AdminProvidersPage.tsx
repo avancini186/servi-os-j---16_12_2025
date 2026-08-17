@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { getAdminProviders } from '../lib/admin';
 import { AdminProviderListItem, AdminProviderFilter } from '../types';
+import { QaToolsPanel } from '../components/QaToolsPanel';
 
 const AdminProvidersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const AdminProvidersPage: React.FC = () => {
   const [providers, setProviders] = useState<AdminProviderListItem[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<AdminProviderFilter>('pending_review');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showQaTools, setShowQaTools] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -101,11 +103,28 @@ const AdminProvidersPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowQaTools(!showQaTools)}
+              className={`px-3 py-1.5 font-bold text-xs rounded-lg border transition-colors flex items-center gap-1.5 ${
+                showQaTools
+                  ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
+                  : 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100'
+              }`}
+            >
+              <span>🧪 Ferramentas de QA</span>
+              <span className="material-symbols-outlined text-sm">
+                {showQaTools ? 'expand_less' : 'expand_more'}
+              </span>
+            </button>
+
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
               Modo Administrador
             </span>
           </div>
         </div>
+
+        {/* QA Tools Section */}
+        {showQaTools && <QaToolsPanel />}
 
         {/* Filter Tabs & Search Bar */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
