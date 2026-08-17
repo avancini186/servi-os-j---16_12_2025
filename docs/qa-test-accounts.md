@@ -80,9 +80,28 @@ SELECT public.reset_qa_test_provider(p_provider_id);
 
 ---
 
-## 7. Cuidados de Segurança e Credenciais
+## 7. Gestão de Credenciais e Senhas de QA
+
+As senhas das personas de QA **não são armazenadas no repositório** para garantir a segurança. Elas são gerenciadas localmente pelo responsável pelo ambiente de QA através de variáveis de ambiente.
+
+### Comandos de Automação (CLI):
+1. **Configuração e Sincronização Inicial de QA (`npm run qa:setup`):**
+   ```powershell
+   npm run qa:setup
+   ```
+   Cria/sincroniza idempotentemente as 3 personas oficiais (`cliente.teste@servicosja.com`, `prestador.teste@servicosja.com`, `admin.teste@servicosja.com`) nas tabelas `profiles`, `qa_test_accounts`, `provider_profiles` e `admin_users`.
+
+2. **Redefinição Segura de Senhas (`npm run qa:reset-passwords`):**
+   Para redefinir as senhas das 3 personas oficiais via Admin API do Supabase:
+   ```powershell
+   $env:SUPABASE_SERVICE_ROLE_KEY="sua_chave_service_role_aqui"
+   $env:QA_CLIENT_PASSWORD="SuaNovaSenhaCliente123!"
+   $env:QA_PROVIDER_PASSWORD="SuaNovaSenhaPrestador123!"
+   $env:QA_ADMIN_PASSWORD="SuaNovaSenhaAdmin123!"
+   npm run qa:reset-passwords
+   ```
 
 > [!CAUTION]
-> - Nenhuma senha real é armazenada neste arquivo ou versionada no repositório Git.
-> - As credenciais de QA devem ser geradas em ambiente isolado de testes/desenvolvimento via Supabase Auth Dashboard ou scripts locais.
-> - Nenhuma chave `service_role` deve ser exposta no código frontend ou enviada ao cliente.
+> - Nenhuma senha em texto puro ou chave `SUPABASE_SERVICE_ROLE_KEY` deve ser salva em arquivos versionados do Git.
+> - O script `qa:reset-passwords` possui verificação de segurança que **recusa e aborta** qualquer tentativa de redefinir senhas de e-mails que não pertençam estritamente às personas oficiais registradas na tabela `qa_test_accounts`.
+

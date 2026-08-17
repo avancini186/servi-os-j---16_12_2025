@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://pgnvfdjxbnhmmfqsetkm.supabase.co';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_ocxhJIpHphIFrkK5_hnQxw_-vxiq7I_';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // If service role key is available, use admin client, otherwise use public anon client
 const supabase = createClient(
@@ -16,19 +16,17 @@ const supabase = createClient(
   }
 );
 
-const TEST_PASSWORD = process.env.QA_TEST_PASSWORD || 'Teste123456!';
-
 const qaAccounts = [
   {
     email: 'cliente.teste@servicosja.com',
-    password: TEST_PASSWORD,
+    password: process.env.QA_CLIENT_PASSWORD || process.env.QA_TEST_PASSWORD || 'ClienteSenha123!',
     name: 'Cliente Teste',
     role: 'client',
     persona: 'client',
   },
   {
     email: 'prestador.teste@servicosja.com',
-    password: TEST_PASSWORD,
+    password: process.env.QA_PROVIDER_PASSWORD || process.env.QA_TEST_PASSWORD || 'PrestadorSenha123!',
     name: 'Carlos Almeida',
     professionalTitle: 'Eletricista Residencial — TESTE',
     city: 'Itapira',
@@ -39,7 +37,7 @@ const qaAccounts = [
   },
   {
     email: 'admin.teste@servicosja.com',
-    password: TEST_PASSWORD,
+    password: process.env.QA_ADMIN_PASSWORD || process.env.QA_TEST_PASSWORD || 'AdminSenha123!',
     name: 'Administrador Teste — QA',
     role: 'admin',
     persona: 'admin',
@@ -49,7 +47,7 @@ const qaAccounts = [
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function seedQaAccounts() {
-  console.log('🚀 Iniciando reconciliação e seed idempotente das contas de QA (P15.2)...');
+  console.log('🚀 Iniciando reconciliação e setup das contas de QA (P15.3)...');
   console.log(`📌 Supabase URL: ${SUPABASE_URL}`);
   console.log(`📌 Admin Service Role Key presente: ${SUPABASE_SERVICE_ROLE_KEY ? 'SIM' : 'NÃO (usando anon key com rate-limit fallback)'}\n`);
 
@@ -60,7 +58,7 @@ async function seedQaAccounts() {
     let userId = null;
 
     if (SUPABASE_SERVICE_ROLE_KEY) {
-      // 1. Service Role Key path: Check if user exists via Admin API
+      // Service Role Key path: Check if user exists via Admin API
       const { data: usersList } = await supabase.auth.admin.listUsers();
       const existingUser = usersList?.users?.find((u) => u.email === acc.email);
 
@@ -86,7 +84,7 @@ async function seedQaAccounts() {
         console.log(`  ✓ Criado com sucesso via Admin API: ${acc.email} (ID: ${userId})`);
       }
     } else {
-      // 2. Anon Client path: Try login first
+      // Anon Client path: Try login first
       const { data: loginData } = await supabase.auth.signInWithPassword({
         email: acc.email,
         password: acc.password,
@@ -183,7 +181,6 @@ async function seedQaAccounts() {
     // Special reconciliation for Provider QA
     if (acc.persona === 'provider') {
       try {
-        // Fetch profile id
         const { data: profData } = await supabase
           .from('profiles')
           .select('id')
@@ -227,7 +224,7 @@ async function seedQaAccounts() {
     }
   }
 
-  console.log('\n🎉 Reconciliação das Contas de QA P15.2 concluída com sucesso!');
+  console.log('\n🎉 Setup das Contas de QA P15.3 concluído com sucesso!');
   process.exit(0);
 }
 
