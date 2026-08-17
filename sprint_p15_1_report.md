@@ -22,9 +22,9 @@ As personas foram integradas utilizando estritamente a arquitetura de produção
 
 | Persona | E-mail de Referência | Role | Status / Configuração | Finalidade no Ambiente de QA |
 | :--- | :--- | :--- | :--- | :--- |
-| **Cliente Teste** | `cliente.teste@servicosja.local` | `client` | Ativo (`qa_test_accounts`) | Testar busca, visualização de catálogo, compartilhamento de perfil, utilização de contatos e bloqueio de rotas/APIs privadas (`/provider`, `/onboarding`, `/analytics`, `/admin`). |
-| **Prestador Teste** | `prestador.teste@servicosja.local` | `provider` | Inicia em `draft` | Testar onboarding, cadastro de serviços, áreas de atendimento, upload de portfólio, preview, assinatura e solicitação de publicação (`pending_review`). |
-| **Admin Teste** | `admin.teste@servicosja.local` | `admin` | Registrado em `admin_users` | Testar moderação no painel `/admin`, aprovação (`published`), recusa com justificativa obrigatória (`rejected`), suspensão (`suspended`) e reset de QA. |
+| **Cliente Teste** | `cliente.teste@servicosja.com` | `client` | Ativo (`qa_test_accounts`) | Testar busca, visualização de catálogo, compartilhamento de perfil, utilização de contatos e bloqueio de rotas/APIs privadas (`/provider`, `/onboarding`, `/analytics`, `/admin`). |
+| **Prestador Teste** | `prestador.teste@servicosja.com` | `provider` | Inicia em `draft` | Testar onboarding, cadastro de serviços, áreas de atendimento, upload de portfólio, preview, assinatura e solicitação de publicação (`pending_review`). |
+| **Admin Teste** | `admin.teste@servicosja.com` | `admin` | Registrado em `admin_users` | Testar moderação no painel `/admin`, aprovação (`published`), recusa com justificativa obrigatória (`rejected`), suspensão (`suspended`) e reset de QA. |
 
 ### 2.2 Estrutura de Banco de Dados (`qa_test_accounts`)
 

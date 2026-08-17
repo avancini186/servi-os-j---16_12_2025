@@ -39,9 +39,9 @@ CREATE TABLE public.qa_test_accounts (
 
 | Persona | E-mail de Referência | Role | Finalidade no Ambiente de QA |
 | :--- | :--- | :--- | :--- |
-| **Cliente Teste** | `cliente.teste@servicosja.local` | `client` | Testar login, catálogo público, navegação de perfil, contatos e bloqueio de rotas privadas (`/provider`, `/admin`, `/analytics`). |
-| **Prestador Teste** | `prestador.teste@servicosja.local` | `provider` | Testar onboarding, formulários, serviços, áreas de atendimento, upload/ordem do portfólio, preview, assinatura e solicitação de publicação. |
-| **Admin Teste** | `admin.teste@servicosja.local` | `admin` | Testar moderação no painel `/admin`, revisão detalhada, aprovação (`published`), recusa com justificativa (`rejected`) e suspensão (`suspended`). |
+| **Cliente Teste** | `cliente.teste@servicosja.com` | `client` | Testar login, catálogo público, navegação de perfil, contatos e bloqueio de rotas privadas (`/provider`, `/admin`, `/analytics`). |
+| **Prestador Teste** | `prestador.teste@servicosja.com` | `provider` | Testar onboarding, formulários, serviços, áreas de atendimento, upload/ordem do portfólio, preview, assinatura e solicitação de publicação. |
+| **Admin Teste** | `admin.teste@servicosja.com` | `admin` | Testar moderação no painel `/admin`, revisão detalhada, aprovação (`published`), recusa com justificativa (`rejected`) e suspensão (`suspended`). |
 
 ---
 
