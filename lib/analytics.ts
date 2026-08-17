@@ -93,11 +93,12 @@ export async function getProviderAnalyticsSummary(
     const startDate = getPeriodStartDate(period);
     const startDateIso = startDate.toISOString();
 
-    // 1. Fetch all analytics events for this provider in current period
+    // 1. Fetch all analytics events for this provider in current period (excluding QA test events)
     const { data: events, error } = await supabase
       .from('provider_analytics_events')
       .select('id, event_type, search_term, channel, portfolio_item_id, created_at')
       .eq('provider_id', providerId)
+      .eq('is_test_event', false)
       .gte('created_at', startDateIso)
       .order('created_at', { ascending: true });
 
@@ -220,6 +221,7 @@ export async function getProviderAnalyticsSummary(
         .from('provider_analytics_events')
         .select('event_type')
         .eq('provider_id', providerId)
+        .eq('is_test_event', false)
         .gte('created_at', prevStart.toISOString())
         .lt('created_at', prevEnd.toISOString());
 
