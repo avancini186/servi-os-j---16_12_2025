@@ -19,14 +19,14 @@ const supabase = createClient(
 const qaAccounts = [
   {
     email: 'cliente.teste@servicosja.com',
-    password: process.env.QA_CLIENT_PASSWORD || process.env.QA_TEST_PASSWORD || 'ClienteSenha123!',
+    password: process.env.QA_CLIENT_PASSWORD || 'K7#mP2@xQ9',
     name: 'Cliente Teste',
     role: 'client',
     persona: 'client',
   },
   {
     email: 'prestador.teste@servicosja.com',
-    password: process.env.QA_PROVIDER_PASSWORD || process.env.QA_TEST_PASSWORD || 'PrestadorSenha123!',
+    password: process.env.QA_PROVIDER_PASSWORD || 'vR8$L4!nZ2',
     name: 'Carlos Almeida',
     professionalTitle: 'Eletricista Residencial — TESTE',
     city: 'Itapira',
@@ -37,7 +37,7 @@ const qaAccounts = [
   },
   {
     email: 'admin.teste@servicosja.com',
-    password: process.env.QA_ADMIN_PASSWORD || process.env.QA_TEST_PASSWORD || 'AdminSenha123!',
+    password: process.env.QA_ADMIN_PASSWORD || 'T5@qW9#cH3',
     name: 'Administrador Teste — QA',
     role: 'admin',
     persona: 'admin',
@@ -57,7 +57,7 @@ async function seedQaAccounts() {
 
     let userId = null;
 
-    if (SUPABASE_SERVICE_ROLE_KEY) {
+    if (SUPABASE_SERVICE_ROLE_KEY && !SUPABASE_SERVICE_ROLE_KEY.includes('SUA_SERVICE_ROLE')) {
       // Service Role Key path: Check if user exists via Admin API
       const { data: usersList } = await supabase.auth.admin.listUsers();
       const existingUser = usersList?.users?.find((u) => u.email === acc.email);
@@ -225,7 +225,8 @@ async function seedQaAccounts() {
   }
 
   console.log('\n🎉 Setup das Contas de QA P15.3 concluído com sucesso!');
-  process.exit(0);
 }
 
-seedQaAccounts();
+seedQaAccounts().catch((err) => {
+  console.error('Erro na execução do script:', err.message);
+});
