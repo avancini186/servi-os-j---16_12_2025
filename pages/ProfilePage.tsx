@@ -221,11 +221,11 @@ const ProfilePage: React.FC = () => {
                   <h2 className="text-gray-900 dark:text-white text-base sm:text-lg font-bold tracking-tight mb-3">
                     Serviços Oferecidos
                   </h2>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {['Instalação Elétrica', 'Manutenção Predial', 'Reparos Rápidos', 'Quadros de Energia', 'Iluminação LED', 'Automação'].map((service, i) => (
                       <span
                         key={i}
-                        className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full text-xs font-semibold"
+                        className="inline-flex items-center px-2.5 sm:px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full text-xs font-semibold leading-normal max-w-full"
                       >
                         {service}
                       </span>
