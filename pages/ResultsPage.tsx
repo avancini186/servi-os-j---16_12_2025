@@ -1,56 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { providers, categories } from '../data/mockData';
 
 const ResultsPage: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
+  const searchParams = location.state as { category?: string; term?: string } | undefined;
+
+  const [selectedCategory, setSelectedCategory] = useState<string>(searchParams?.category || '');
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
+  const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(location.state?.category || null);
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-  const [minRating, setMinRating] = useState<number | null>(null);
+
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
-  // Close mobile filters on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showFilters) {
-        setShowFilters(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showFilters]);
-
-  // Close mobile filter modal on viewport resize to desktop (md breakpoint >= 768px)
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768 && showFilters) {
-        setShowFilters(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [showFilters]);
-
-  // Derive unique locations from providers
-  const uniqueLocations = Array.from(new Set(providers.map((p) => p.location))).sort();
-
-  // Filter Logic
+  // Filter providers based on active filters
   const filteredProviders = providers.filter((provider) => {
-    if (selectedCategory && provider.category !== selectedCategory) return false;
-    if (selectedLocation && provider.location !== selectedLocation) return false;
-    if (minRating && provider.rating < minRating) return false;
+    if (selectedCategory && provider.category.toLowerCase() !== selectedCategory.toLowerCase()) {
+      return false;
+    }
+    if (selectedRating && provider.rating < selectedRating) {
+      return false;
+    }
+    if (selectedPrice && (provider as any).priceRange && (provider as any).priceRange !== selectedPrice) {
+      return false;
+    }
     return true;
   });
 
-  const activeFilterCount = (selectedCategory ? 1 : 0) + (selectedLocation ? 1 : 0) + (minRating ? 1 : 0);
+  const totalPages = Math.ceil(filteredProviders.length / itemsPerPage) || 1;
+  const paginatedProviders = filteredProviders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  const clearFilters = () => {
-    setSelectedCategory(null);
-    setSelectedLocation(null);
-    setMinRating(null);
+  const activeFilterCount =
+    (selectedCategory ? 1 : 0) + (selectedRating ? 1 : 0) + (selectedPrice ? 1 : 0);
+
+  const handleClearFilters = () => {
+    setSelectedCategory('');
+    setSelectedRating(null);
+    setSelectedPrice(null);
     setCurrentPage(1);
   };
 
@@ -58,8 +51,8 @@ const ResultsPage: React.FC = () => {
     <div className="relative flex min-h-screen w-full flex-col font-display bg-background-light dark:bg-background-dark text-text-light-primary dark:text-text-dark-primary overflow-x-hidden">
       <Header />
 
-      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="flex flex-col md:grid md:grid-cols-4 gap-6 lg:gap-8">
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-6">
+        <div className="flex flex-col md:grid md:grid-cols-4 gap-5 lg:gap-6">
           
           {/* Mobile Filter Toggle Button */}
           <div className="md:hidden">
@@ -102,14 +95,14 @@ const ResultsPage: React.FC = () => {
             }}
           >
             <div 
-              className="flex flex-col rounded-2xl bg-white dark:bg-card-dark p-5 sm:p-6 shadow-xl md:shadow-sm border border-gray-200 dark:border-gray-800 max-h-[85vh] md:max-h-none overflow-y-auto w-full max-w-lg mx-auto md:max-w-none"
+              className="flex flex-col rounded-2xl bg-white dark:bg-card-dark p-4 sm:p-5 shadow-xl md:shadow-sm border border-gray-200 dark:border-gray-800 max-h-[85vh] md:max-h-none overflow-y-auto w-full max-w-lg mx-auto md:max-w-none"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Filter Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800 mb-5">
+              <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 dark:border-gray-800 mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-2xl">tune</span>
-                  <h2 className="text-text-light-primary dark:text-text-dark-primary text-lg font-bold">
+                  <span className="material-symbols-outlined text-primary text-xl">tune</span>
+                  <h2 className="text-text-light-primary dark:text-text-dark-primary text-base sm:text-lg font-bold">
                     Filtros
                   </h2>
                   {activeFilterCount > 0 && (
@@ -130,21 +123,21 @@ const ResultsPage: React.FC = () => {
                 </button>
               </div>
 
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-4 sm:gap-5">
                 {/* Categories Filter */}
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="filter-category" className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    <span className="material-symbols-outlined text-primary text-lg">sell</span>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="filter-category" className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <span className="material-symbols-outlined text-primary text-base">sell</span>
                     <span>Categoria</span>
                   </label>
                   <select
                     id="filter-category"
-                    value={selectedCategory || ''}
+                    value={selectedCategory}
                     onChange={(e) => {
-                      setSelectedCategory(e.target.value || null);
+                      setSelectedCategory(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full min-h-[44px] px-3 py-2.5 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none cursor-pointer"
+                    className="w-full min-h-[44px] px-3 py-2 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none cursor-pointer"
                   >
                     <option value="">Todas as Categorias</option>
                     {categories.map((cat) => (
@@ -155,78 +148,73 @@ const ResultsPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Location Filter */}
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="filter-location" className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    <span className="material-symbols-outlined text-primary text-lg">location_on</span>
-                    <span>Localização</span>
+                {/* Rating Filter */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="filter-rating" className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <span className="material-symbols-outlined text-amber-500 text-base">star</span>
+                    <span>Avaliação Mínima</span>
                   </label>
                   <select
-                    id="filter-location"
-                    value={selectedLocation || ''}
+                    id="filter-rating"
+                    value={selectedRating || ''}
                     onChange={(e) => {
-                      setSelectedLocation(e.target.value || null);
+                      setSelectedRating(e.target.value ? Number(e.target.value) : null);
                       setCurrentPage(1);
                     }}
-                    className="w-full min-h-[44px] px-3 py-2.5 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none cursor-pointer"
+                    className="w-full min-h-[44px] px-3 py-2 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-700 dark:text-white outline-none cursor-pointer"
                   >
-                    <option value="">Todas as Cidades</option>
-                    {uniqueLocations.map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
-                      </option>
-                    ))}
+                    <option value="">Qualquer Avaliação</option>
+                    <option value="4.5">⭐ 4.5 ou mais</option>
+                    <option value="4.0">⭐ 4.0 ou mais</option>
+                    <option value="3.5">⭐ 3.5 ou mais</option>
                   </select>
                 </div>
 
-                {/* Rating Filter */}
-                <div className="flex flex-col gap-2">
-                  <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    <span className="material-symbols-outlined text-amber-500 text-lg">star</span>
-                    <span>Avaliação Mínima</span>
+                {/* Price Range Filter */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <span className="material-symbols-outlined text-primary text-base">payments</span>
+                    <span>Faixa de Preço</span>
                   </span>
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {[4, 4.5, 4.8].map((rating) => (
+                  <div className="grid grid-cols-3 gap-2">
+                    {['$', '$$', '$$$'].map((price) => (
                       <button
-                        key={rating}
+                        key={price}
                         type="button"
                         onClick={() => {
-                          setMinRating(minRating === rating ? null : rating);
+                          setSelectedPrice(selectedPrice === price ? null : price);
                           setCurrentPage(1);
                         }}
-                        className={`min-h-[40px] px-4 py-2 text-xs font-bold rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                          minRating === rating
+                        className={`min-h-[40px] px-3 py-2 text-xs font-bold rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                          selectedPrice === price
                             ? 'bg-primary text-white border-primary shadow-sm'
-                            : 'bg-gray-50 dark:bg-gray-800 text-text-light-secondary dark:text-text-dark-secondary border-gray-200 dark:border-gray-700 hover:border-primary hover:text-primary'
+                            : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
-                        ⭐ {rating}+
+                        {price}
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
-                {showFilters && (
-                  <button
-                    type="button"
-                    onClick={() => setShowFilters(false)}
-                    className="flex w-full min-h-[44px] cursor-pointer items-center justify-center rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    Ver {filteredProviders.length} resultados
-                  </button>
-                )}
-
+                {/* Apply Filters (Mobile Drawer only) */}
                 <button
                   type="button"
-                  onClick={clearFilters}
+                  onClick={() => setShowFilters(false)}
+                  className="flex w-full min-h-[44px] cursor-pointer items-center justify-center rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  Ver Resultados
+                </button>
+
+                {/* Clear Filters Button */}
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
                   disabled={activeFilterCount === 0}
-                  className={`flex w-full min-h-[44px] cursor-pointer items-center justify-center rounded-lg px-4 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  className={`flex w-full min-h-[44px] cursor-pointer items-center justify-center rounded-lg px-4 text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                     activeFilterCount > 0
-                      ? 'bg-primary/10 dark:bg-primary/20 text-primary hover:bg-primary/20 dark:hover:bg-primary/30'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                      ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-red-200 dark:border-red-900/30'
+                      : 'text-gray-400 bg-gray-100 dark:bg-gray-800/50 cursor-not-allowed border border-transparent'
                   }`}
                 >
                   Limpar Filtros
@@ -238,38 +226,38 @@ const ResultsPage: React.FC = () => {
           {/* Results Content Column */}
           <div className="col-span-1 md:col-span-3">
             {/* Page Heading & Count */}
-            <div className="flex flex-col gap-1 mb-6">
-              <h1 className="text-text-light-primary dark:text-text-dark-primary text-2xl sm:text-3xl font-black tracking-tight break-words">
+            <div className="flex flex-col gap-1 mb-5">
+              <h1 className="text-text-light-primary dark:text-text-dark-primary text-xl sm:text-2xl lg:text-2xl font-black tracking-tight break-words">
                 {selectedCategory ? `Resultados para "${selectedCategory}"` : 'Profissionais Encontrados'}
               </h1>
-              <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm sm:text-base font-normal">
+              <p className="text-text-light-secondary dark:text-text-dark-secondary text-xs sm:text-sm font-normal">
                 {filteredProviders.length} {filteredProviders.length === 1 ? 'profissional encontrado' : 'profissionais encontrados'}
               </p>
             </div>
 
             {/* Provider Cards Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {filteredProviders.length > 0 ? (
-                filteredProviders.map((provider) => (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4 lg:gap-4.5">
+              {paginatedProviders.length > 0 ? (
+                paginatedProviders.map((provider) => (
                   <article
                     key={provider.id}
-                    className="flex flex-col sm:flex-row items-stretch gap-4 rounded-xl bg-white dark:bg-card-dark p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:shadow-md hover:border-primary/30"
+                    className="flex flex-col sm:flex-row items-stretch gap-3.5 sm:gap-4 rounded-xl bg-white dark:bg-card-dark p-3.5 sm:p-4 shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:shadow-md hover:border-primary/30"
                   >
                     {/* Provider Avatar / Photo */}
                     <div
-                      className="w-full sm:w-28 sm:h-28 h-44 bg-center bg-no-repeat bg-cover rounded-lg flex-shrink-0"
+                      className="w-full sm:w-28 sm:h-28 h-40 bg-center bg-no-repeat bg-cover rounded-lg flex-shrink-0"
                       aria-label={`Foto de perfil de ${provider.name}`}
                       style={{ backgroundImage: `url("${provider.imageUrl}")` }}
                     />
 
                     {/* Provider Info */}
-                    <div className="flex flex-col flex-1 justify-between gap-3 min-w-0">
-                      <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col flex-1 justify-between gap-2.5 min-w-0">
+                      <div className="flex flex-col gap-1">
                         {/* Rating & Location */}
                         <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-text-light-secondary dark:text-text-dark-secondary">
+                          <div className="flex items-center gap-1 text-xs font-semibold text-text-light-secondary dark:text-text-dark-secondary">
                             <span
-                              className="material-symbols-outlined text-amber-500 text-lg shrink-0"
+                              className="material-symbols-outlined text-amber-500 text-base shrink-0"
                               style={{ fontVariationSettings: "'FILL' 1" }}
                             >
                               star
@@ -285,19 +273,19 @@ const ResultsPage: React.FC = () => {
                         </div>
 
                         {/* Name */}
-                        <h2 className="text-text-light-primary dark:text-text-dark-primary text-base sm:text-lg font-bold leading-snug break-words">
+                        <h2 className="text-text-light-primary dark:text-text-dark-primary text-sm sm:text-base font-bold leading-snug break-words">
                           {provider.name}
                         </h2>
 
                         {/* Category Badge */}
                         <div className="flex items-center gap-2">
-                          <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold bg-primary/10 text-primary w-fit">
+                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-primary/10 text-primary w-fit">
                             {provider.category}
                           </span>
                         </div>
 
                         {/* Description */}
-                        <p className="text-text-light-secondary dark:text-text-dark-secondary text-xs sm:text-sm font-normal line-clamp-2 leading-relaxed">
+                        <p className="text-text-light-secondary dark:text-text-dark-secondary text-xs font-normal line-clamp-2 leading-relaxed">
                           {provider.description}
                         </p>
                       </div>
@@ -306,7 +294,7 @@ const ResultsPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => navigate('/profile')}
-                        className="flex w-full sm:w-auto sm:self-start min-h-[44px] px-5 cursor-pointer items-center justify-center rounded-lg bg-primary text-white text-sm font-bold leading-normal hover:bg-primary/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        className="flex w-full sm:w-auto sm:self-start min-h-[40px] px-4 cursor-pointer items-center justify-center rounded-lg bg-primary text-white text-xs sm:text-sm font-bold leading-normal hover:bg-primary/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                         aria-label={`Ver perfil completo de ${provider.name}`}
                       >
                         <span>Ver Perfil</span>
@@ -316,69 +304,68 @@ const ResultsPage: React.FC = () => {
                 ))
               ) : (
                 /* Empty State */
-                <div className="col-span-full flex flex-col items-center justify-center py-12 px-4 rounded-2xl bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-800 text-center">
-                  <span className="material-symbols-outlined text-5xl text-gray-400 mb-3">search_off</span>
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">
+                <div className="col-span-full flex flex-col items-center justify-center py-10 px-4 rounded-2xl bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-800 text-center">
+                  <span className="material-symbols-outlined text-4xl text-gray-400 mb-2.5">search_off</span>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                     Nenhum profissional encontrado
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-6">
-                    Não encontramos resultados com os filtros atuais. Tente alterar ou limpar os filtros para ver mais profissionais.
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-5">
+                    Tente ajustar os filtros selecionados ou busque por outra categoria.
                   </p>
                   <button
                     type="button"
-                    onClick={clearFilters}
-                    className="flex min-h-[44px] items-center justify-center px-6 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    onClick={handleClearFilters}
+                    className="flex min-h-[44px] items-center justify-center px-5 rounded-lg bg-primary text-white text-xs sm:text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
-                    Limpar Filtros
+                    Limpar Todos os Filtros
                   </button>
                 </div>
               )}
             </div>
 
             {/* Pagination Controls */}
-            {filteredProviders.length > 0 && (
-              <nav aria-label="Paginação de resultados" className="flex items-center justify-center mt-8 sm:mt-10">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="flex h-11 w-11 items-center justify-center rounded-lg bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    aria-label="Página anterior"
-                  >
-                    <span className="material-symbols-outlined text-xl">chevron_left</span>
-                  </button>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8 sm:mt-10">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-card-dark text-gray-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label="Página anterior"
+                >
+                  <span className="material-symbols-outlined text-lg">chevron_left</span>
+                </button>
 
-                  {[1, 2, 3].map((page) => (
-                    <button
-                      key={page}
-                      type="button"
-                      onClick={() => setCurrentPage(page)}
-                      aria-current={currentPage === page ? 'page' : undefined}
-                      className={`flex h-11 w-11 items-center justify-center rounded-lg text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                        currentPage === page
-                          ? 'bg-primary text-white shadow-sm'
-                          : 'bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
+                    key={page}
                     type="button"
-                    onClick={() => setCurrentPage(Math.min(3, currentPage + 1))}
-                    disabled={currentPage === 3}
-                    className="flex h-11 w-11 items-center justify-center rounded-lg bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    aria-label="Próxima página"
+                    onClick={() => setCurrentPage(page)}
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      currentPage === page
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'border border-gray-200 dark:border-gray-800 bg-white dark:bg-card-dark text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                    aria-current={currentPage === page ? 'page' : undefined}
+                    aria-label={`Página ${page}`}
                   >
-                    <span className="material-symbols-outlined text-xl">chevron_right</span>
+                    {page}
                   </button>
-                </div>
-              </nav>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-card-dark text-gray-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label="Próxima página"
+                >
+                  <span className="material-symbols-outlined text-lg">chevron_right</span>
+                </button>
+              </div>
             )}
-          </div>
 
+          </div>
         </div>
       </main>
     </div>

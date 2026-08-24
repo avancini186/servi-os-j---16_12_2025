@@ -36,10 +36,10 @@ const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background-dark flex flex-col justify-center items-center p-3 sm:p-6 md:p-8 font-display overflow-y-auto">
-      <div className="w-full max-w-5xl bg-white dark:bg-card-dark rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row my-auto border border-gray-100 dark:border-gray-800">
+      <div className="w-full max-w-4xl bg-white dark:bg-card-dark rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row my-auto border border-gray-100 dark:border-gray-800">
         
         {/* Visual / Branding Side */}
-        <div className="relative md:w-1/2 bg-gray-900 text-white overflow-hidden p-6 sm:p-8 md:p-12 flex flex-col justify-between min-h-[160px] sm:min-h-[220px] md:min-h-[auto]">
+        <div className="relative md:w-5/12 bg-gray-900 text-white overflow-hidden p-5 sm:p-6 md:p-8 flex flex-col justify-between min-h-[150px] sm:min-h-[200px] md:min-h-[auto]">
           <img
             src={theme.heroImage}
             alt="Fundo temático"
@@ -55,29 +55,29 @@ const AuthPage: React.FC = () => {
               aria-label="Serviços Já - Ir para página inicial"
             >
               <span className="material-symbols-outlined text-primary text-2xl sm:text-3xl">hub</span>
-              <span className="text-lg sm:text-xl font-bold tracking-tight">Serviços Já</span>
+              <span className="text-base sm:text-lg font-bold tracking-tight">Serviços Já</span>
             </button>
           </div>
 
-          <div className="relative z-10 mt-6 sm:mt-10 md:mt-0">
-            <p className="text-xs sm:text-sm font-bold uppercase tracking-wider mb-1 opacity-80">
+          <div className="relative z-10 mt-5 sm:mt-8 md:mt-0">
+            <p className="text-xs font-bold uppercase tracking-wider mb-1 opacity-80">
               {theme.title}
             </p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight break-words">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-3xl font-bold leading-tight tracking-tight break-words">
               {theme.subtitle}
             </h1>
           </div>
         </div>
 
         {/* Form Container Side */}
-        <div className="w-full md:w-1/2 p-5 sm:p-8 md:p-12 flex flex-col justify-center relative">
+        <div className="w-full md:w-7/12 p-5 sm:p-6 md:p-8 flex flex-col justify-center relative">
           
           {/* Back Navigation Button */}
-          <div className="mb-4">
+          <div className="mb-3 sm:mb-4">
             <button
               type="button"
               onClick={() => navigate('/auth/selection')}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1 text-xs sm:text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg py-1 px-1.5 -ml-1 transition-colors min-h-[40px]"
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1 text-xs sm:text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg py-1 px-1.5 -ml-1 transition-colors min-h-[38px]"
               aria-label="Voltar para seleção de perfil"
             >
               <span className="material-symbols-outlined text-base">arrow_back</span>
@@ -85,8 +85,8 @@ const AuthPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="text-center mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-1">
+          <div className="text-center mb-5">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight mb-1">
               {mode === 'login' ? 'Bem-vindo de volta!' : 'Crie sua conta'}
             </h2>
             <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm leading-relaxed">
@@ -97,11 +97,11 @@ const AuthPage: React.FC = () => {
           </div>
 
           {/* Mode Switch Tabs (Login / Signup) */}
-          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-6">
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-5">
             <button
               type="button"
               onClick={() => setMode('login')}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all min-h-[38px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 mode === 'login'
                   ? 'bg-white dark:bg-card-dark text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -112,7 +112,7 @@ const AuthPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setMode('signup')}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all min-h-[38px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 mode === 'signup'
                   ? 'bg-white dark:bg-card-dark text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -123,10 +123,10 @@ const AuthPage: React.FC = () => {
           </div>
 
           {/* Credentials Form */}
-          <form className="flex flex-col gap-4">
+          <form className="flex flex-col gap-3.5">
             {mode === 'signup' && (
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="auth-name" className="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="auth-name" className="text-xs font-bold text-gray-700 dark:text-gray-300">
                   Nome Completo
                 </label>
                 <input
@@ -134,13 +134,13 @@ const AuthPage: React.FC = () => {
                   type="text"
                   placeholder="Seu nome completo"
                   autoComplete="name"
-                  className={`w-full min-h-[48px] px-4 py-2.5 text-sm sm:text-base rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-900 ${theme.border} outline-none transition-all text-gray-900 dark:text-white`}
+                  className={`w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-900 ${theme.border} outline-none transition-all text-gray-900 dark:text-white`}
                 />
               </div>
             )}
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="auth-email" className="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="auth-email" className="text-xs font-bold text-gray-700 dark:text-gray-300">
                 E-mail {isProvider ? 'Profissional' : ''}
               </label>
               <input
@@ -148,13 +148,13 @@ const AuthPage: React.FC = () => {
                 type="email"
                 placeholder="seu@email.com"
                 autoComplete="email"
-                className={`w-full min-h-[48px] px-4 py-2.5 text-sm sm:text-base rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-900 ${theme.border} outline-none transition-all text-gray-900 dark:text-white`}
+                className={`w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-900 ${theme.border} outline-none transition-all text-gray-900 dark:text-white`}
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <div className="flex justify-between items-center">
-                <label htmlFor="auth-password" className="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300">
+                <label htmlFor="auth-password" className="text-xs font-bold text-gray-700 dark:text-gray-300">
                   Senha
                 </label>
                 {mode === 'login' && (
@@ -172,15 +172,15 @@ const AuthPage: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  className={`w-full min-h-[48px] px-4 py-2.5 pr-12 text-sm sm:text-base rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-900 ${theme.border} outline-none transition-all text-gray-900 dark:text-white`}
+                  className={`w-full min-h-[44px] px-3.5 py-2 pr-11 text-xs sm:text-sm rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-900 ${theme.border} outline-none transition-all text-gray-900 dark:text-white`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-11 w-11 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg transition-colors"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg transition-colors"
                   aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                 >
-                  <span className="material-symbols-outlined text-xl">
+                  <span className="material-symbols-outlined text-lg">
                     {showPassword ? 'visibility_off' : 'visibility'}
                   </span>
                 </button>
@@ -189,37 +189,37 @@ const AuthPage: React.FC = () => {
 
             <button
               type="submit"
-              className={`mt-2 w-full min-h-[48px] py-3.5 rounded-xl text-white font-bold text-sm sm:text-base shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${theme.primary}`}
+              className={`mt-1.5 w-full min-h-[44px] py-3 rounded-xl text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${theme.primary}`}
             >
               <span>{mode === 'login' ? (isProvider ? 'Acessar Painel' : 'Entrar') : 'Criar Conta'}</span>
-              <span className="material-symbols-outlined text-lg">arrow_forward</span>
+              <span className="material-symbols-outlined text-base">arrow_forward</span>
             </button>
           </form>
 
           {/* Social Divider */}
-          <div className="relative my-6 sm:my-8">
+          <div className="relative my-5 sm:my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200 dark:border-gray-700" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-card-dark px-3 text-gray-400 font-medium">ou continue com</span>
+              <span className="bg-white dark:bg-card-dark px-3 text-gray-400 font-medium text-[11px]">ou continue com</span>
             </div>
           </div>
 
           {/* Social Login Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <button
               type="button"
-              className="flex min-h-[44px] items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-semibold text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex min-h-[42px] items-center justify-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-semibold text-xs text-gray-700 dark:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 shrink-0" alt="Google" />
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-4 h-4 shrink-0" alt="Google" />
               <span>Google</span>
             </button>
             <button
               type="button"
-              className="flex min-h-[44px] items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-semibold text-xs sm:text-sm text-gray-700 dark:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex min-h-[42px] items-center justify-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-semibold text-xs text-gray-700 dark:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <img src="https://www.svgrepo.com/show/448234/apple.svg" className="w-5 h-5 dark:invert shrink-0" alt="Apple" />
+              <img src="https://www.svgrepo.com/show/448234/apple.svg" className="w-4 h-4 dark:invert shrink-0" alt="Apple" />
               <span>Apple</span>
             </button>
           </div>
