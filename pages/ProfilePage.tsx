@@ -173,7 +173,7 @@ const ProfilePage: React.FC = () => {
           {/* Tabs Navigation */}
           <nav
             aria-label="Seções do perfil"
-            className="grid grid-cols-3 sm:flex border-b border-slate-200 dark:border-slate-800"
+            className="grid grid-cols-3 w-full sm:flex border-b border-slate-200 dark:border-slate-800"
           >
             {[
               { id: 'basicinfo', label: 'Sobre mim', icon: 'person' },
@@ -184,7 +184,7 @@ const ProfilePage: React.FC = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as 'basicinfo' | 'portfolio' | 'reviews')}
-                className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-1.5 sm:px-5 py-3 text-xs sm:text-sm font-bold leading-normal tracking-wide transition-colors whitespace-nowrap border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 px-1 sm:px-5 py-3 text-[11px] sm:text-sm font-bold leading-normal tracking-tight sm:tracking-wide transition-colors whitespace-nowrap border-b-2 min-w-0 w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   activeTab === tab.id
                     ? 'text-primary border-primary'
                     : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300'
@@ -192,8 +192,8 @@ const ProfilePage: React.FC = () => {
                 aria-selected={activeTab === tab.id}
                 role="tab"
               >
-                <span className="material-symbols-outlined text-base sm:text-lg shrink-0">{tab.icon}</span>
-                <span className="truncate sm:overflow-visible">{tab.label}</span>
+                <span className="material-symbols-outlined text-[17px] sm:text-lg shrink-0 leading-none">{tab.icon}</span>
+                <span className="shrink-0">{tab.label}</span>
               </button>
             ))}
           </nav>
