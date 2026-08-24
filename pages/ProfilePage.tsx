@@ -368,7 +368,7 @@ const ProfilePage: React.FC = () => {
       {/* Lightbox Modal */}
       {selectedImageIndex !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-200 select-none"
           onClick={() => setSelectedImageIndex(null)}
           role="dialog"
           aria-modal="true"
@@ -379,7 +379,7 @@ const ProfilePage: React.FC = () => {
             {/* Prev Button */}
             <button
               type="button"
-              className="absolute left-2 sm:left-4 z-50 h-11 w-11 flex items-center justify-center text-white bg-black/60 hover:bg-black/80 rounded-full transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="absolute left-1 sm:left-4 z-50 h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center text-white bg-black/60 hover:bg-black/80 rounded-full transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-lg cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedImageIndex((prev) => (prev !== null ? (prev - 1 + portfolioImages.length) % portfolioImages.length : null));
@@ -389,18 +389,20 @@ const ProfilePage: React.FC = () => {
               <span className="material-symbols-outlined text-2xl sm:text-3xl">chevron_left</span>
             </button>
 
-            {/* Main Image */}
-            <img
-              src={portfolioImages[selectedImageIndex]}
-              alt={`Imagem ${selectedImageIndex + 1} do portfólio de Júlio César`}
-              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl animate-in zoom-in-95 duration-200 select-none"
-              onClick={(e) => e.stopPropagation()}
-            />
+            {/* Main Image Container with Safe Bounds */}
+            <div className="flex items-center justify-center w-full h-full px-12 sm:px-16 md:px-20 py-14 sm:py-12 pointer-events-none">
+              <img
+                src={portfolioImages[selectedImageIndex]}
+                alt={`Imagem ${selectedImageIndex + 1} do portfólio de Júlio César`}
+                className="max-w-full max-h-[80vh] sm:max-h-[85vh] object-contain rounded-xl shadow-2xl animate-in zoom-in-95 duration-200 pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
 
             {/* Next Button */}
             <button
               type="button"
-              className="absolute right-2 sm:right-4 z-50 h-11 w-11 flex items-center justify-center text-white bg-black/60 hover:bg-black/80 rounded-full transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="absolute right-1 sm:right-4 z-50 h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center text-white bg-black/60 hover:bg-black/80 rounded-full transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-lg cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedImageIndex((prev) => (prev !== null ? (prev + 1) % portfolioImages.length : null));
@@ -413,7 +415,7 @@ const ProfilePage: React.FC = () => {
             {/* Close Button */}
             <button
               type="button"
-              className="absolute top-2 right-2 sm:top-4 sm:right-4 z-50 h-11 w-11 flex items-center justify-center text-white bg-black/60 hover:bg-black/80 rounded-full transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 z-50 h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center text-white bg-black/60 hover:bg-black/80 rounded-full transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-lg cursor-pointer"
               onClick={() => setSelectedImageIndex(null)}
               aria-label="Fechar visualizador de foto"
             >
